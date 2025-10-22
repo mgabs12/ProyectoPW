@@ -1,130 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // es para hacer peticiones HTTP
+
+import React, { useState } from 'react';
 import { Clock, User, Car, Gavel, Heart, Plus, Search, Bell, LogOut, Menu, X } from 'lucide-react';
 
-// Mock data
-const mockAuctions = [
-  {
-    id: 1,
-    title: 'Toyota Camry 2020',
-    brand: 'Toyota',
-    model: 'Camry',
-    year: 2020,
-    basePrice: 15000,
-    currentBid: 17500,
-    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    image: '/api/placeholder/300/200',
-    seller: 'María González',
-    status: 'active',
-    color: 'bg-green-400'
-  },
-  {
-    id: 2,
-    title: 'Honda Civic 2019',
-    brand: 'Honda',
-    model: 'Civic',
-    year: 2019,
-    basePrice: 12000,
-    currentBid: 13750,
-    endTime: new Date(Date.now() + 5 * 60 * 60 * 1000),
-    image: '/api/placeholder/300/200',
-    seller: 'Carlos Mendoza',
-    status: 'active',
-    color: 'bg-red-400'
-  },
-  {
-    id: 3,
-    title: 'Ford Mustang 2018',
-    brand: 'Ford',
-    model: 'Mustang',
-    year: 2018,
-    basePrice: 20000,
-    currentBid: 22500,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    image: '/api/placeholder/300/200',
-    seller: 'Ana López',
-    status: 'active',
-    color: 'bg-green-500'
-  }
-];
+/* =========================
+   SUBCOMPONENTES (fuera de CarBid)
+   ========================= */
 
-const CarBid = () => {
-  const [currentView, setCurrentView] = useState('home');
-  const [user, setUser] = useState(null);
-  const [auctions, setAuctions] = useState(mockAuctions);
-  const [selectedAuction, setSelectedAuction] = useState(null);
-  const [bidAmount, setBidAmount] = useState('');
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [registerForm, setRegisterForm] = useState({ 
-    firstName: '', lastName: '', email: '', password: '', phone: '' 
-  });
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setAuctions(prev => [...prev]);
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTimeRemaining = (endTime) => {
-    const now = new Date();
-    const diff = endTime - now;
-    
-    if (diff <= 0) return 'Finalizada';
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (hours >= 24) {
-      const days = Math.floor(hours / 24);
-      const remainingHours = hours % 24;
-      return `${days}d ${remainingHours}h`;
-    }
-    
-    return `${hours}h ${minutes}m`;
-  };
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setUser({
-      id: 1,
-      name: 'Juan Pérez',
-      email: loginForm.email,
-      role: 'both'
-    });
-    setCurrentView('dashboard');
-    setLoginForm({ email: '', password: '' });
-  };
-
-  const handleRegister = (e) => {
-    e.preventDefault();
-    setUser({
-      id: 1,
-      name: `${registerForm.firstName} ${registerForm.lastName}`,
-      email: registerForm.email,
-      role: 'both'
-    });
-    setCurrentView('dashboard');
-    setRegisterForm({ firstName: '', lastName: '', email: '', password: '', phone: '' });
-  };
-
-  const handleBid = (e) => {
-    e.preventDefault();
-    if (!bidAmount || parseFloat(bidAmount) <= selectedAuction.currentBid) return;
-    
-    const updatedAuctions = auctions.map(auction =>
-      auction.id === selectedAuction.id
-        ? { ...auction, currentBid: parseFloat(bidAmount) }
-        : auction
-    );
-    
-    setAuctions(updatedAuctions);
-    setSelectedAuction({ ...selectedAuction, currentBid: parseFloat(bidAmount) });
-    setBidAmount('');
-    alert('¡Puja realizada exitosamente!');
-  };
-
-  const Header = () => (
+function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMenuOpen }) {
+  return (
     <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -173,7 +57,11 @@ const CarBid = () => {
                   <span className="text-sm font-medium">{user.name}</span>
                 </div>
                 <button 
-                  onClick={() => {setUser(null); setCurrentView('home');}}
+                  onClick={() => { 
+                    // cerrar sesión
+                    setCurrentView('home');
+                    window.location.reload(); // opcional: simple reset (igual que antes)
+                  }}
                   className="text-blue-200 hover:text-white transition-colors"
                 >
                   <LogOut className="h-5 w-5" />
@@ -216,13 +104,13 @@ const CarBid = () => {
             {user ? (
               <>
                 <button 
-                  onClick={() => {setCurrentView('dashboard'); setMobileMenuOpen(false);}}
+                  onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }}
                   className="block w-full text-left px-3 py-2 text-white hover:bg-blue-600 rounded-md"
                 >
                   Dashboard
                 </button>
                 <button 
-                  onClick={() => {setCurrentView('auctions'); setMobileMenuOpen(false);}}
+                  onClick={() => { setCurrentView('auctions'); setMobileMenuOpen(false); }}
                   className="block w-full text-left px-3 py-2 text-white hover:bg-blue-600 rounded-md"
                 >
                   Subastas
@@ -235,7 +123,7 @@ const CarBid = () => {
                     <span className="text-white">{user.name}</span>
                   </div>
                   <button 
-                    onClick={() => {setUser(null); setCurrentView('home'); setMobileMenuOpen(false);}}
+                    onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); window.location.reload(); }}
                     className="block w-full text-left px-3 py-2 text-blue-200 hover:text-white"
                   >
                     Cerrar Sesión
@@ -245,13 +133,13 @@ const CarBid = () => {
             ) : (
               <>
                 <button 
-                  onClick={() => {setCurrentView('login'); setMobileMenuOpen(false);}}
+                  onClick={() => { setCurrentView('login'); setMobileMenuOpen(false); }}
                   className="block w-full text-left px-3 py-2 text-white hover:bg-blue-600 rounded-md"
                 >
                   Iniciar Sesión
                 </button>
                 <button 
-                  onClick={() => {setCurrentView('register'); setMobileMenuOpen(false);}}
+                  onClick={() => { setCurrentView('register'); setMobileMenuOpen(false); }}
                   className="block w-full text-left px-3 py-2 text-white hover:bg-blue-600 rounded-md"
                 >
                   Registro
@@ -263,8 +151,10 @@ const CarBid = () => {
       )}
     </header>
   );
+}
 
-  const HomePage = () => (
+function HomePage({ setCurrentView, auctions, formatTimeRemaining, setSelectedAuction }) {
+  return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
@@ -398,7 +288,7 @@ const CarBid = () => {
           </div>
           
           <div className="border-t border-blue-800 mt-12 pt-8 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex itemscenter justify-center gap-2 mb-4">
               <div className="bg-blue-600 p-2 rounded-lg">
                 <Car className="h-6 w-6 text-white" />
               </div>
@@ -410,8 +300,10 @@ const CarBid = () => {
       </footer>
     </div>
   );
+}
 
-  const LoginPage = () => (
+function LoginPage({ handleLogin, loginForm, setLoginForm, setCurrentView }) {
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-8 text-center">
@@ -476,8 +368,10 @@ const CarBid = () => {
       </div>
     </div>
   );
+}
 
-  const RegisterPage = () => (
+function RegisterPage({ handleRegister, registerForm, setRegisterForm, setCurrentView }) {
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center px-4 py-8">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-8 text-center">
@@ -503,8 +397,8 @@ const CarBid = () => {
             <label className="block text-gray-700 text-sm font-bold mb-2">Apellido:</label>
             <input
               type="text"
-              value={registerForm.lastName}
-              onChange={(e) => setRegisterForm({...registerForm, lastName: e.target.value})}
+              value={registerForm.lastname}
+              onChange={(e) => setRegisterForm({...registerForm, lastname: e.target.value})}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               required
             />
@@ -538,6 +432,20 @@ const CarBid = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
+
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2">Rol:</label>
+            <select
+              value={registerForm.role}
+              onChange={(e) =>
+                setRegisterForm({ ...registerForm, role: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              <option value="seller">Vendedor</option>
+              <option value="buyer">Comprador</option>
+            </select>
+          </div>
           
           <div className="mb-6">
             <label className="flex items-start">
@@ -570,8 +478,10 @@ const CarBid = () => {
       </div>
     </div>
   );
+}
 
-  const Dashboard = () => (
+function Dashboard({ user, auctions }) {
+  return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-4xl font-bold mb-8 text-blue-700">Bienvenido, {user?.name}</h1>
@@ -598,14 +508,14 @@ const CarBid = () => {
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
               <h3 className="text-xl font-bold mb-6 text-gray-800">Acciones Rápidas</h3>
               <button 
-                onClick={() => setCurrentView('create-auction')}
+                onClick={() => alert('Ir a Crear Subasta desde sidebar')}
                 className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-lg mb-4 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-2 font-bold shadow-lg"
               >
                 <Plus className="h-5 w-5" />
                 Crear Subasta
               </button>
               <button 
-                onClick={() => setCurrentView('auctions')}
+                onClick={() => alert('Ir a Mis Pujas')}
                 className="w-full bg-gray-600 text-white py-4 rounded-lg hover:bg-gray-700 transition-colors font-bold"
               >
                 Ver Mis Pujas
@@ -626,7 +536,7 @@ const CarBid = () => {
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h3 className="text-2xl font-bold mb-8 text-gray-800">Mis Subastas Recientes</h3>
               <div className="grid md:grid-cols-2 gap-6">
-                {auctions.slice(0, 2).map((auction, index) => (
+                {auctions.slice(0, 2).map((auction) => (
                   <div key={auction.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
                     <div className={`h-32 ${auction.color} rounded-lg mb-4 flex items-center justify-center`}>
                       <Car className="h-12 w-12 text-white" />
@@ -645,8 +555,18 @@ const CarBid = () => {
       </div>
     </div>
   );
+}
 
-  const AuctionDetail = () => (
+function AuctionDetail({
+  selectedAuction,
+  setCurrentView,
+  formatTimeRemaining,
+  user,
+  handleBid,
+  bidAmount,
+  setBidAmount
+}) {
+  return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button 
@@ -745,7 +665,7 @@ const CarBid = () => {
             
             <div className="bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-200 p-4 rounded-xl mb-6 text-center">
               <p className="font-bold text-orange-700 text-lg">
-                ⏰ Termina en: {formatTimeRemaining(selectedAuction?.endTime)}
+                Termina en: {formatTimeRemaining(selectedAuction?.endTime)}
               </p>
             </div>
 
@@ -820,8 +740,10 @@ const CarBid = () => {
       </div>
     </div>
   );
+}
 
-  const AuctionsPage = () => (
+function AuctionsPage({ auctions, setCurrentView, setSelectedAuction, formatTimeRemaining, user }) {
+  return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -884,192 +806,344 @@ const CarBid = () => {
       </div>
     </div>
   );
+}
 
-  const CreateAuction = () => {
-    const [auctionForm, setAuctionForm] = useState({
-      title: '',
-      brand: '',
-      model: '',
-      year: '',
-      description: '',
-      basePrice: '',
-      endDate: ''
-    });
+function CreateAuction({ user, auctions, setAuctions, setCurrentView }) {
+  const [auctionForm, setAuctionForm] = useState({
+    title: '',
+    brand: '',
+    model: '',
+    year: '',
+    description: '',
+    basePrice: '',
+    endDate: ''
+  });
 
-    const handleCreateAuction = (e) => {
-      e.preventDefault();
-      const newAuction = {
-        id: auctions.length + 1,
-        ...auctionForm,
-        year: parseInt(auctionForm.year),
-        basePrice: parseFloat(auctionForm.basePrice),
-        currentBid: parseFloat(auctionForm.basePrice),
-        endTime: new Date(auctionForm.endDate),
-        seller: user.name,
-        status: 'active',
-        image: '/api/placeholder/300/200',
-        color: 'bg-blue-400'
-      };
-      
-      setAuctions([...auctions, newAuction]);
-      alert('¡Subasta creada exitosamente!');
-      setCurrentView('dashboard');
+  const handleCreateAuction = (e) => {
+    e.preventDefault();
+    const newAuction = {
+      id: auctions.length + 1,
+      ...auctionForm,
+      year: parseInt(auctionForm.year),
+      basePrice: parseFloat(auctionForm.basePrice),
+      currentBid: parseFloat(auctionForm.basePrice),
+      endTime: new Date(auctionForm.endDate),
+      seller: user.name,
+      status: 'active',
+      image: '/api/placeholder/300/200',
+      color: 'bg-blue-400'
     };
+    
+    setAuctions([...auctions, newAuction]);
+    alert('¡Subasta creada exitosamente!');
+    setCurrentView('dashboard');
+  };
 
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-2xl mb-8">
-            <div className="flex items-center gap-4">
-              <div className="bg-white p-3 rounded-full">
-                <Car className="h-8 w-8 text-blue-600" />
-              </div>
-              <h1 className="text-4xl font-bold">Crear Subasta</h1>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-2xl mb-8">
+          <div className="flex items-center gap-4">
+            <div className="bg-white p-3 rounded-full">
+              <Car className="h-8 w-8 text-blue-600" />
             </div>
+            <h1 className="text-4xl font-bold">Crear Subasta</h1>
           </div>
-          
-          <form onSubmit={handleCreateAuction} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="grid lg:grid-cols-2">
-              {/* Left Column */}
-              <div className="p-8 border-r border-gray-200">
-                <h3 className="text-2xl font-bold mb-6 text-blue-600">Información del Vehículo</h3>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">Título de la Subasta:</label>
-                  <input
-                    type="text"
-                    value={auctionForm.title}
-                    onChange={(e) => setAuctionForm({...auctionForm, title: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    placeholder="Ej: Toyota Camry 2020 en excelente estado"
-                    required
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">Marca:</label>
-                  <select
-                    value={auctionForm.brand}
-                    onChange={(e) => setAuctionForm({...auctionForm, brand: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    required
-                  >
-                    <option value="">Seleccionar marca</option>
-                    <option value="Toyota">Toyota</option>
-                    <option value="Honda">Honda</option>
-                    <option value="Ford">Ford</option>
-                    <option value="Chevrolet">Chevrolet</option>
-                    <option value="Nissan">Nissan</option>
-                  </select>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">Modelo:</label>
-                  <input
-                    type="text"
-                    value={auctionForm.model}
-                    onChange={(e) => setAuctionForm({...auctionForm, model: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    required
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">Año:</label>
-                  <input
-                    type="number"
-                    value={auctionForm.year}
-                    onChange={(e) => setAuctionForm({...auctionForm, year: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    min="1990"
-                    max="2025"
-                    required
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">Descripción:</label>
-                  <textarea
-                    value={auctionForm.description}
-                    onChange={(e) => setAuctionForm({...auctionForm, description: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    rows={4}
-                    placeholder="Describe el estado, características especiales, etc."
-                    required
-                  />
-                </div>
+        </div>
+        
+        <form onSubmit={handleCreateAuction} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="grid lg:grid-cols-2">
+            {/* Left Column */}
+            <div className="p-8 border-r border-gray-200">
+              <h3 className="text-2xl font-bold mb-6 text-blue-600">Información del Vehículo</h3>
+              
+              <div className="mb-6">
+                <label className="block text-gray-700 font-bold mb-2">Título de la Subasta:</label>
+                <input
+                  type="text"
+                  value={auctionForm.title}
+                  onChange={(e) => setAuctionForm({...auctionForm, title: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="Ej: Toyota Camry 2020 en excelente estado"
+                  required
+                />
               </div>
 
-              {/* Right Column */}
-              <div className="p-8 bg-gray-50">
-                <h3 className="text-2xl font-bold mb-6 text-blue-600">Configuración de Subasta</h3>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">Precio Base ($):</label>
-                  <input
-                    type="number"
-                    value={auctionForm.basePrice}
-                    onChange={(e) => setAuctionForm({...auctionForm, basePrice: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    min="1000"
-                    placeholder="10000"
-                    required
-                  />
-                </div>
-
-                <div className="mb-8">
-                  <label className="block text-gray-700 font-bold mb-2">Fecha de Cierre:</label>
-                  <input
-                    type="datetime-local"
-                    value={auctionForm.endDate}
-                    onChange={(e) => setAuctionForm({...auctionForm, endDate: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    min={new Date().toISOString().slice(0, 16)}
-                    required
-                  />
-                </div>
-
-                <h4 className="text-lg font-bold mb-4 text-gray-800">Imágenes del Vehículo</h4>
-                <div className="border-2 border-dashed border-blue-300 p-8 text-center bg-blue-50 rounded-xl mb-8">
-                  <Car className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-                  <p className="text-gray-700 mb-4 font-medium">Arrastra las imágenes aquí o</p>
-                  <button
-                    type="button"
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg"
-                  >
-                    Seleccionar Archivos
-                  </button>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg shadow-lg transform hover:scale-105"
+              <div className="mb-6">
+                <label className="block text-gray-700 font-bold mb-2">Marca:</label>
+                <select
+                  value={auctionForm.brand}
+                  onChange={(e) => setAuctionForm({...auctionForm, brand: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  required
                 >
-                  CREAR SUBASTA
+                  <option value="">Seleccionar marca</option>
+                  <option value="Toyota">Toyota</option>
+                  <option value="Honda">Honda</option>
+                  <option value="Ford">Ford</option>
+                  <option value="Chevrolet">Chevrolet</option>
+                  <option value="Nissan">Nissan</option>
+                </select>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 font-bold mb-2">Modelo:</label>
+                <input
+                  type="text"
+                  value={auctionForm.model}
+                  onChange={(e) => setAuctionForm({...auctionForm, model: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 font-bold mb-2">Año:</label>
+                <input
+                  type="number"
+                  value={auctionForm.year}
+                  onChange={(e) => setAuctionForm({...auctionForm, year: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  min="1990"
+                  max="2025"
+                  required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 font-bold mb-2">Descripción:</label>
+                <textarea
+                  value={auctionForm.description}
+                  onChange={(e) => setAuctionForm({...auctionForm, description: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  rows={4}
+                  placeholder="Describe el estado, características especiales, etc."
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="p-8 bg-gray-50">
+              <h3 className="text-2xl font-bold mb-6 text-blue-600">Configuración de Subasta</h3>
+              
+              <div className="mb-6">
+                <label className="block text-gray-700 font-bold mb-2">Precio Base ($):</label>
+                <input
+                  type="number"
+                  value={auctionForm.basePrice}
+                  onChange={(e) => setAuctionForm({...auctionForm, basePrice: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  min="1000"
+                  placeholder="10000"
+                  required
+                />
+              </div>
+
+              <div className="mb-8">
+                <label className="block text-gray-700 font-bold mb-2">Fecha de Cierre:</label>
+                <input
+                  type="datetime-local"
+                  value={auctionForm.endDate}
+                  onChange={(e) => setAuctionForm({...auctionForm, endDate: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  min={new Date().toISOString().slice(0, 16)}
+                  required
+                />
+              </div>
+
+              <h4 className="text-lg font-bold mb-4 text-gray-800">Imágenes del Vehículo</h4>
+              <div className="border-2 border-dashed border-blue-300 p-8 text-center bg-blue-50 rounded-xl mb-8">
+                <Car className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                <p className="text-gray-700 mb-4 font-medium">Arrastra las imágenes aquí o</p>
+                <button
+                  type="button"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg"
+                >
+                  Seleccionar Archivos
                 </button>
               </div>
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg shadow-lg transform hover:scale-105"
+              >
+                CREAR SUBASTA
+              </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
+    </div>
+  );
+}
+
+/* =========================
+   COMPONENTE PRINCIPAL
+   ========================= */
+
+const mockAuctions = [
+  { id: 1, title: 'Toyota Camry 2020', brand: 'Toyota', model: 'Camry', year: 2020, basePrice: 15000, currentBid: 17500, endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), image: '/api/placeholder/300/200', seller: 'María González', status: 'active', color: 'bg-green-400' },
+  { id: 2, title: 'Honda Civic 2019', brand: 'Honda', model: 'Civic', year: 2019, basePrice: 12000, currentBid: 13750, endTime: new Date(Date.now() + 5 * 60 * 60 * 1000), image: '/api/placeholder/300/200', seller: 'Carlos Mendoza', status: 'active', color: 'bg-red-400' },
+  { id: 3, title: 'Ford Mustang 2018', brand: 'Ford', model: 'Mustang', year: 2018, basePrice: 20000, currentBid: 22500, endTime: new Date(Date.now() + 24 * 60 * 60 * 1000), image: '/api/placeholder/300/200', seller: 'Ana López', status: 'active', color: 'bg-green-500' }
+];
+
+const CarBid = () => {
+  const [currentView, setCurrentView] = useState('home');
+  const [user, setUser] = useState(null);
+  const [auctions, setAuctions] = useState(mockAuctions);
+  const [selectedAuction, setSelectedAuction] = useState(null);
+  const [bidAmount, setBidAmount] = useState('');
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ firstName: '', lastname: '', email: '', password: '', phone: '', role: 'buyer' });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const formatTimeRemaining = (endTime) => {
+    const now = new Date();
+    const diff = endTime - now;
+    if (diff <= 0) return 'Finalizada';
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return `${days}d ${remainingHours}h`;
+    }
+    return `${hours}h ${minutes}m`;
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setUser({ id: 1, name: 'Juan Pérez', email: loginForm.email, role: 'both' });
+    setCurrentView('dashboard');
+    setLoginForm({ email: '', password: '' });
+  };
+
+  const TOKEN_KEY = 'carbid_token';
+  const saveToken = (t) => localStorage.setItem(TOKEN_KEY, t);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: registerForm.firstName.trim(),
+        lastname: registerForm.lastname.trim(),
+        email: registerForm.email.trim(),
+        password: registerForm.password,
+        role: registerForm.role,         // 'buyer' | 'seller'
+        phone: registerForm.phone?.trim() || null
+      };
+
+      const { data } = await axios.post('/api/auth/register', payload);
+
+      // guarda sesión
+      saveToken(data.token);
+      setUser({
+        id: data.user.id,
+        name: data.user.name,
+        lastname: data.user.lastname,
+        email: data.user.email,
+        role: data.user.role,
+        phone: data.user.phone
+      });
+
+      // limpia y navega
+      setRegisterForm({ firstName: '', lastname: '', email: '', password: '', phone: '', role: 'buyer' });
+      setCurrentView('dashboard');
+    } catch (err) {
+      const msg = err?.response?.data?.error || 'No se pudo registrar. Revisa los datos.';
+      alert(msg);
+    }
+  };
+
+  const handleBid = (e) => {
+    e.preventDefault();
+    if (!bidAmount || parseFloat(bidAmount) <= selectedAuction.currentBid) return;
+    const updatedAuctions = auctions.map(auction =>
+      auction.id === selectedAuction.id
+        ? { ...auction, currentBid: parseFloat(bidAmount) }
+        : auction
     );
+    setAuctions(updatedAuctions);
+    setSelectedAuction({ ...selectedAuction, currentBid: parseFloat(bidAmount) });
+    setBidAmount('');
+    alert('¡Puja realizada exitosamente!');
   };
 
   const renderCurrentView = () => {
     switch (currentView) {
-      case 'login': return <LoginPage />;
-      case 'register': return <RegisterPage />;
-      case 'dashboard': return <Dashboard />;
-      case 'auctions': return <AuctionsPage />;
-      case 'auction-detail': return <AuctionDetail />;
-      case 'create-auction': return <CreateAuction />;
-      default: return <HomePage />;
+      case 'login':
+        return (
+          <LoginPage
+            handleLogin={handleLogin}
+            loginForm={loginForm}
+            setLoginForm={setLoginForm}
+            setCurrentView={setCurrentView}
+          />
+        );
+      case 'register':
+        return (
+          <RegisterPage
+            handleRegister={handleRegister}
+            registerForm={registerForm}
+            setRegisterForm={setRegisterForm}
+            setCurrentView={setCurrentView}
+          />
+        );
+      case 'dashboard':
+        return <Dashboard user={user} auctions={auctions} />;
+      case 'auctions':
+        return (
+          <AuctionsPage
+            auctions={auctions}
+            setCurrentView={setCurrentView}
+            setSelectedAuction={setSelectedAuction}
+            formatTimeRemaining={formatTimeRemaining}
+            user={user}
+          />
+        );
+      case 'auction-detail':
+        return (
+          <AuctionDetail
+            selectedAuction={selectedAuction}
+            setCurrentView={setCurrentView}
+            formatTimeRemaining={formatTimeRemaining}
+            user={user}
+            handleBid={handleBid}
+            bidAmount={bidAmount}
+            setBidAmount={setBidAmount}
+          />
+        );
+      case 'create-auction':
+        return (
+          <CreateAuction
+            user={user}
+            auctions={auctions}
+            setAuctions={setAuctions}
+            setCurrentView={setCurrentView}
+          />
+        );
+      default:
+        return (
+          <HomePage
+            setCurrentView={setCurrentView}
+            auctions={auctions}
+            formatTimeRemaining={formatTimeRemaining}
+            setSelectedAuction={setSelectedAuction}
+          />
+        );
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header
+        user={user}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
       {renderCurrentView()}
     </div>
   );

@@ -1,1 +1,7 @@
 npm install mysql2
+npm install axios
+npm install cors
+------------------------------------------------------------
+bcryptjs → encripta contraseñas
+jsonwebtoken → genera tokens JWT para sesiones seguras
+npm install bcryptjs jsonwebtoken
