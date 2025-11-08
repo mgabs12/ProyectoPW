@@ -10,6 +10,27 @@ const api = axios.create({
   }
 });
 
+const IMAGE_BASE_URL = 'http://localhost:5000';
+// Componente para mostrar imagen de vehículo
+const VehicleImage = ({ imageUrl, alt, className = "w-full h-full object-cover" }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const fullImageUrl = imageUrl ? `${IMAGE_BASE_URL}${imageUrl}` : null;
+  
+  if (!fullImageUrl || imageError) {
+    return <Car className={`h-16 w-16 text-white ${className}`} />;
+  }
+  
+  return (
+    <img 
+      src={fullImageUrl}
+      alt={alt}
+      className={className}
+      onError={() => setImageError(true)}
+    />
+  );
+};
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('carbid_token');
   if (token) {
@@ -628,13 +649,13 @@ function AuctionDetail({
 }) {
   if (!selectedAuction) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <Car className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-          <p className="text-xl text-gray-500">Subasta no encontrada</p>
+          <Car className="h-24 w-24 text-gray-500 mx-auto mb-4" />
+          <p className="text-xl text-gray-400">Subasta no encontrada</p>
           <button 
             onClick={() => setCurrentView('auctions')}
-            className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700"
+            className="mt-4 bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-neutral-800 border-2 border-yellow-500"
           >
             Ver todas las subastas
           </button>
@@ -644,21 +665,22 @@ function AuctionDetail({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button 
           onClick={() => setCurrentView('auctions')}
-          className="text-blue-600 hover:text-blue-800 mb-6 flex items-center gap-2 font-medium"
+          className="text-yellow-400 hover:text-yellow-300 mb-6 flex items-center gap-2 font-medium"
         >
           ← Volver a subastas
         </button>
         
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h1 className="text-3xl font-bold mb-6 text-gray-800">{selectedAuction.title}</h1>
+            <div className="bg-neutral-900 rounded-2xl shadow-lg p-8 border border-yellow-500">
+              <h1 className="text-3xl font-bold mb-6 text-white">{selectedAuction.title}</h1>
               
-              <div className={`h-80 ${selectedAuction.color} rounded-2xl mb-6 flex items-center justify-center overflow-hidden`}>
+              {/* Imagen principal */}
+              <div className="h-80 rounded-2xl mb-6 flex items-center justify-center overflow-hidden bg-neutral-800">
                 {selectedAuction.imageUrl ? (
                   <img 
                     src={`http://localhost:5000${selectedAuction.imageUrl}`} 
@@ -670,75 +692,85 @@ function AuctionDetail({
                     }}
                   />
                 ) : null}
-                <Car className="h-32 w-32 text-white" style={{ display: selectedAuction.imageUrl ? 'none' : 'block' }} />
+                <div 
+                  className="flex items-center justify-center w-full h-full" 
+                  style={{ display: selectedAuction.imageUrl ? 'none' : 'flex' }}
+                >
+                  <Car className="h-32 w-32 text-white" />
+                </div>
               </div>
               
+              {/* Thumbnails */}
               <div className="grid grid-cols-4 gap-3 mb-8">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-20 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors">
-                    <Car className="h-8 w-8 text-gray-400" />
+                  <div key={i} className="h-20 bg-neutral-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-neutral-700 transition-colors border border-gray-700">
+                    <Car className="h-8 w-8 text-gray-500" />
                   </div>
                 ))}
               </div>
 
+              {/* Especificaciones */}
               <div className="mb-8">
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">Especificaciones</h3>
+                <div className="bg-black rounded-xl p-6 border border-yellow-500">
+                  <h3 className="text-xl font-bold mb-4 text-yellow-400">Especificaciones</h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex justify-between border-b border-gray-200 pb-3">
-                      <span className="font-medium text-gray-600">Marca:</span>
-                      <span className="font-bold text-gray-800">{selectedAuction.brand}</span>
+                    <div className="flex justify-between border-b border-gray-700 pb-3">
+                      <span className="font-medium text-gray-400">Marca:</span>
+                      <span className="font-bold text-white">{selectedAuction.brand}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-3">
-                      <span className="font-medium text-gray-600">Modelo:</span>
-                      <span className="font-bold text-gray-800">{selectedAuction.model}</span>
+                    <div className="flex justify-between border-b border-gray-700 pb-3">
+                      <span className="font-medium text-gray-400">Modelo:</span>
+                      <span className="font-bold text-white">{selectedAuction.model}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-3">
-                      <span className="font-medium text-gray-600">Año:</span>
-                      <span className="font-bold text-gray-800">{selectedAuction.year}</span>
+                    <div className="flex justify-between border-b border-gray-700 pb-3">
+                      <span className="font-medium text-gray-400">Año:</span>
+                      <span className="font-bold text-white">{selectedAuction.year}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-200 pb-3">
-                      <span className="font-medium text-gray-600">Precio Base:</span>
-                      <span className="font-bold text-gray-800">${selectedAuction.basePrice?.toLocaleString()}</span>
+                    <div className="flex justify-between border-b border-gray-700 pb-3">
+                      <span className="font-medium text-gray-400">Precio Base:</span>
+                      <span className="font-bold text-yellow-400">${selectedAuction.basePrice?.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Descripción */}
               {selectedAuction.description && (
-                <div className="bg-gray-50 rounded-xl p-6 mb-8">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">Descripción</h3>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-black rounded-xl p-6 mb-8 border border-yellow-500">
+                  <h3 className="text-xl font-bold mb-4 text-yellow-400">Descripción</h3>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
                     {selectedAuction.description}
                   </p>
                 </div>
               )}
 
-              <div className="bg-blue-50 rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-800">Información del Vendedor</h3>
+              {/* Información del vendedor */}
+              <div className="bg-black rounded-xl p-6 border border-yellow-500">
+                <h3 className="text-xl font-bold mb-4 text-yellow-400">Información del Vendedor</h3>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
-                    <User className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <User className="h-8 w-8 text-black" />
                   </div>
                   <div>
-                    <p className="font-bold text-lg text-gray-800">{selectedAuction.vendedor}</p>
-                    <p className="text-gray-600">Vendedor verificado • 4.8/5 ⭐</p>
+                    <p className="font-bold text-lg text-white">{selectedAuction.vendedor}</p>
+                    <p className="text-gray-400">Vendedor verificado • 4.8/5 ⭐</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-4">
+          {/* Panel de pujas */}
+          <div className="bg-neutral-900 rounded-2xl shadow-lg p-6 h-fit sticky top-4 border border-yellow-500">
             <div className="text-center mb-6">
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+              <div className="text-4xl font-bold text-yellow-400 mb-2">
                 ${selectedAuction.currentBid?.toLocaleString()}
               </div>
-              <p className="text-gray-600 font-medium">Puja actual</p>
+              <p className="text-gray-400 font-medium">Puja actual</p>
             </div>
             
-            <div className="bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-200 p-4 rounded-xl mb-6 text-center">
-              <p className="font-bold text-orange-700 text-lg">
+            <div className="bg-gradient-to-r from-yellow-900 to-yellow-800 border border-yellow-500 p-4 rounded-xl mb-6 text-center">
+              <p className="font-bold text-yellow-200 text-lg">
                 Termina en: {formatTimeRemaining(selectedAuction.endTime)}
               </p>
             </div>
@@ -747,7 +779,7 @@ function AuctionDetail({
               user.role === 'comprador' ? (
                 <form onSubmit={handleBid}>
                   <div className="mb-6">
-                    <label className="block text-gray-700 font-bold mb-2">
+                    <label className="block text-gray-300 font-bold mb-2">
                       Tu puja (mínimo ${((selectedAuction.currentBid || selectedAuction.basePrice) + 50)?.toLocaleString()}):
                     </label>
                     <input
@@ -755,21 +787,21 @@ function AuctionDetail({
                       value={bidAmount}
                       onChange={(e) => setBidAmount(e.target.value)}
                       min={(selectedAuction.currentBid || selectedAuction.basePrice) + 50}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-lg"
+                      className="w-full px-4 py-3 border-2 border-yellow-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all text-lg bg-black text-white"
                       placeholder={((selectedAuction.currentBid || selectedAuction.basePrice) + 100)?.toString()}
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105"
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 text-black py-4 rounded-lg hover:from-yellow-400 hover:to-yellow-300 transition-all font-bold text-lg mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105"
                   >
                     <Gavel className="h-5 w-5" />
                     Realizar Puja
                   </button>
                 </form>
               ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                  <p className="text-yellow-800 text-center font-medium">
+                <div className="bg-yellow-900 border border-yellow-500 rounded-lg p-4 mb-4">
+                  <p className="text-yellow-200 text-center font-medium">
                     Como vendedor no puedes realizar pujas
                   </p>
                 </div>
@@ -777,32 +809,33 @@ function AuctionDetail({
             ) : (
               <button
                 onClick={() => setCurrentView('login')}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg mb-4 shadow-lg"
+                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 text-black py-4 rounded-lg hover:from-yellow-400 hover:to-yellow-300 transition-all font-bold text-lg mb-4 shadow-lg"
               >
                 Iniciar Sesión para Pujar
               </button>
             )}
 
-            <button className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-50 transition-colors mb-6 flex items-center justify-center gap-2 font-bold">
+            <button className="w-full border-2 border-yellow-500 text-yellow-400 py-3 rounded-lg hover:bg-neutral-800 transition-colors mb-6 flex items-center justify-center gap-2 font-bold">
               <Heart className="h-5 w-5" />
               Agregar a Favoritos
             </button>
 
-            <div className="border-t pt-6">
-              <h4 className="font-bold mb-4 text-gray-800">Historial de Pujas</h4>
+            {/* Historial de pujas */}
+            <div className="border-t border-gray-700 pt-6">
+              <h4 className="font-bold mb-4 text-white">Historial de Pujas</h4>
               <div className="max-h-64 overflow-y-auto">
                 <div className="space-y-4">
                   {selectedAuction.currentBid > selectedAuction.basePrice ? (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-gray-700">
                       <div>
-                        <p className="font-bold text-gray-800">${selectedAuction.currentBid?.toLocaleString()}</p>
+                        <p className="font-bold text-yellow-400">${selectedAuction.currentBid?.toLocaleString()}</p>
                         <p className="text-sm text-gray-500">Puja más alta • Reciente</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-gray-700">
                       <div>
-                        <p className="font-bold text-gray-800">${selectedAuction.basePrice?.toLocaleString()}</p>
+                        <p className="font-bold text-yellow-400">${selectedAuction.basePrice?.toLocaleString()}</p>
                         <p className="text-sm text-gray-500">Precio base</p>
                       </div>
                     </div>
@@ -854,37 +887,51 @@ function AuctionsPage({ auctions, setCurrentView, setSelectedAuction, formatTime
         {activeAuctions.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {activeAuctions.map(auction => (
-              <div key={auction.id} className="bg-neutral-900 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-yellow-500">
-                <div className={`h-48 ${auction.color || 'bg-neutral-800'} flex items-center justify-center`}>
-                  <Car className="h-16 w-16 text-white" />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-white">{auction.title}</h3>
-                  <p className="text-gray-400 mb-3">Por: {auction.vendedor}</p>
-                  <div className="mb-4">
-                    <p className="text-yellow-400 font-bold text-2xl mb-1">
-                      ${auction.currentBid.toLocaleString()}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                      Precio base: ${auction.basePrice.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 mb-6 text-yellow-400 font-semibold">
-                    <Clock className="h-4 w-4 text-white" />
-                    <span>{formatTimeRemaining(auction.endTime)}</span>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setSelectedAuction(auction);
-                      setCurrentView('auction-detail');
-                    }}
-                    className="w-full bg-gradient-to-r from-black to-neutral-900 text-white py-3 rounded-lg hover:from-neutral-900 hover:to-neutral-700 transition-all font-bold shadow-lg transform hover:scale-105 border-2 border-yellow-500"
-                  >
-                    Ver Detalles
-                  </button>
-                </div>
-              </div>
-            ))}
+  <div key={auction.id} className="bg-neutral-900 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-yellow-500">
+    <div className={`h-48 ${auction.color || 'bg-neutral-800'} flex items-center justify-center overflow-hidden relative`}>
+      {auction.imageUrl ? (
+        <img 
+          src={`http://localhost:5000${auction.imageUrl}`}
+          alt={auction.title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+      ) : null}
+      <Car 
+        className="h-16 w-16 text-white" 
+        style={{ display: auction.imageUrl ? 'none' : 'block' }} 
+      />
+          </div>
+          <div className="p-6">
+            <h3 className="text-xl font-bold mb-2 text-white">{auction.title}</h3>
+            <p className="text-gray-400 mb-3">Por: {auction.vendedor}</p>
+            <div className="mb-4">
+              <p className="text-yellow-400 font-bold text-2xl mb-1">
+                ${auction.currentBid.toLocaleString()}
+              </p>
+              <p className="text-gray-500 text-sm">
+                Precio base: ${auction.basePrice.toLocaleString()}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 mb-6 text-yellow-400 font-semibold">
+              <Clock className="h-4 w-4 text-white" />
+              <span>{formatTimeRemaining(auction.endTime)}</span>
+            </div>
+            <button 
+              onClick={() => {
+                setSelectedAuction(auction);
+                setCurrentView('auction-detail');
+              }}
+              className="w-full bg-gradient-to-r from-black to-neutral-900 text-white py-3 rounded-lg hover:from-neutral-900 hover:to-neutral-700 transition-all font-bold shadow-lg transform hover:scale-105 border-2 border-yellow-500"
+            >
+              Ver Detalles
+            </button>
+          </div>
+        </div>
+      ))}
           </div>
         ) : (
           <div className="text-center py-16">
