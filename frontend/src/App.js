@@ -1,7 +1,7 @@
+
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { Clock, User, Car, Gavel, Heart, Plus, Search, Bell, LogOut, Menu, X } from 'lucide-react';
-
 
 // Configurar axios
 const api = axios.create({
@@ -483,7 +483,7 @@ function RegisterPage({ handleRegister, registerForm, setRegisterForm, setCurren
 function Dashboard({ user, auctions, setCurrentView, setSelectedAuction }) {
   // Filtrar subastas según el rol del usuario
   const userAuctions = user?.role === 'vendedor' 
-    ? auctions.filter(a => a.vendedor_id === user.id)
+    ? auctions.filter(a => a.vendedor_id === user.id) // Cambio importante: usar vendedor_id
     : auctions.filter(a => a.status === 'active');
 
   return (
@@ -1243,9 +1243,7 @@ const CarBid = () => {
     setCurrentView('home');
   };
 
-  // En el componente principal CarBid, reemplaza la función handleBid con esta:
-
-const handleBid = async (e) => {
+  const handleBid = async (e) => {
   e.preventDefault();
   
   if (!bidAmount || parseFloat(bidAmount) <= (selectedAuction.currentBid || selectedAuction.basePrice)) {
