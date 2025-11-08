@@ -1,18 +1,34 @@
-import axios from 'axios'; // es para hacer peticiones HTTP
 
-import React, { useState } from 'react';
+import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import { Clock, User, Car, Gavel, Heart, Plus, Search, Bell, LogOut, Menu, X } from 'lucide-react';
 
+// Configurar axios
+const api = axios.create({
+  baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Interceptor para agregar token automáticamente
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('carbid_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 /* =========================
-   SUBCOMPONENTES (fuera de CarBid)
+   SUBCOMPONENTES
    ========================= */
 
-function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMenuOpen }) {
+function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMenuOpen, handleLogout }) {
   return (
     <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <div 
             className="flex items-center gap-3 cursor-pointer"
             onClick={() => setCurrentView('home')}
@@ -23,7 +39,6 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
             <span className="text-2xl font-bold">CarBid</span>
           </div>
 
-          {/* Desktop Navigation */}
           {user && (
             <nav className="hidden md:flex space-x-8">
               <button 
@@ -45,7 +60,6 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
             </nav>
           )}
 
-          {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
@@ -57,11 +71,7 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
                   <span className="text-sm font-medium">{user.name}</span>
                 </div>
                 <button 
-                  onClick={() => { 
-                    // cerrar sesión
-                    setCurrentView('home');
-                    window.location.reload(); // opcional: simple reset (igual que antes)
-                  }}
+                  onClick={handleLogout}
                   className="text-blue-200 hover:text-white transition-colors"
                 >
                   <LogOut className="h-5 w-5" />
@@ -85,7 +95,6 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
             )}
           </div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -97,7 +106,6 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
         </div>
       </div>
 
-      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-16 inset-x-0 bg-blue-700 border-t border-blue-600 z-50">
           <div className="px-4 py-6 space-y-4">
@@ -123,7 +131,7 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
                     <span className="text-white">{user.name}</span>
                   </div>
                   <button 
-                    onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); window.location.reload(); }}
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                     className="block w-full text-left px-3 py-2 text-blue-200 hover:text-white"
                   >
                     Cerrar Sesión
@@ -154,9 +162,10 @@ function Header({ user, currentView, setCurrentView, mobileMenuOpen, setMobileMe
 }
 
 function HomePage({ setCurrentView, auctions, formatTimeRemaining, setSelectedAuction }) {
+  const activeAuctions = auctions.filter(a => a.status === 'active');
+  
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
@@ -183,7 +192,6 @@ function HomePage({ setCurrentView, auctions, formatTimeRemaining, setSelectedAu
             </div>
           </div>
           
-          {/* Car illustration placeholder */}
           <div className="mt-16 flex justify-center">
             <div className="relative">
               <div className="w-96 h-48 bg-gradient-to-r from-blue-400 to-blue-500 rounded-3xl flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform">
@@ -195,56 +203,61 @@ function HomePage({ setCurrentView, auctions, formatTimeRemaining, setSelectedAu
         </div>
       </div>
 
-      {/* Subastas Section */}
       <div className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-16 text-gray-800">
-            SUBASTA DE VEHÍCULOS
+            SUBASTAS ACTIVAS
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {auctions.map((auction, index) => (
-              <div key={auction.id} className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                <div className={`h-48 ${auction.color} flex items-center justify-center relative`}>
-                  <Car className="h-20 w-20 text-white" />
-                  <div className="absolute top-4 left-4 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-bold">
-                    #{String(index + 1).padStart(3, '0')}
+          {activeAuctions.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-8">
+              {activeAuctions.slice(0, 3).map((auction, index) => (
+                <div key={auction.id} className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                  <div className={`h-48 ${auction.color} flex items-center justify-center relative`}>
+                    <Car className="h-20 w-20 text-white" />
+                    <div className="absolute top-4 left-4 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-bold">
+                      #{String(auction.id).padStart(3, '0')}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2 text-gray-800">{auction.title}</h3>
+                    <p className="text-blue-600 font-bold text-2xl mb-1">
+                      Oferta actual: ${auction.currentBid.toLocaleString()}
+                    </p>
+                    <p className="text-gray-500 mb-4">
+                      Termina en: {formatTimeRemaining(auction.endTime)}
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setSelectedAuction(auction);
+                        setCurrentView('auction-detail');
+                      }}
+                      className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                    >
+                      Ver detalles
+                    </button>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800">{auction.title}</h3>
-                  <p className="text-blue-600 font-bold text-2xl mb-1">
-                    Oferta actual: ${auction.currentBid.toLocaleString()}
-                  </p>
-                  <p className="text-gray-500 mb-4">
-                    Termina en: {formatTimeRemaining(auction.endTime)}
-                  </p>
-                  <button 
-                    onClick={() => {
-                      setSelectedAuction(auction);
-                      setCurrentView('auction-detail');
-                    }}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors"
-                  >
-                    Ver detalles
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <Car className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+              <p className="text-xl text-gray-500">No hay subastas activas en este momento</p>
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <button 
               onClick={() => setCurrentView('auctions')}
               className="bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg"
             >
-              Ver subastas activas
+              Ver todas las subastas
             </button>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="bg-blue-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
@@ -276,19 +289,14 @@ function HomePage({ setCurrentView, auctions, formatTimeRemaining, setSelectedAu
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-bold mb-4">Site Title</h3>
-              <p className="text-blue-200 mb-4">Subtitle for Site</p>
-              <p className="text-blue-200 text-sm">Description</p>
-              <div className="mt-4">
-                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  Subscribe
-                </button>
-              </div>
+              <h3 className="text-lg font-bold mb-4">CarBid</h3>
+              <p className="text-blue-200 mb-4">Sistema de subastas de vehículos</p>
+              <p className="text-blue-200 text-sm">Compra y vende con confianza</p>
             </div>
           </div>
           
           <div className="border-t border-blue-800 mt-12 pt-8 text-center">
-            <div className="flex itemscenter justify-center gap-2 mb-4">
+            <div className="flex items-center justify-center gap-2 mb-4">
               <div className="bg-blue-600 p-2 rounded-lg">
                 <Car className="h-6 w-6 text-white" />
               </div>
@@ -336,14 +344,6 @@ function LoginPage({ handleLogin, loginForm, setLoginForm, setCurrentView }) {
               placeholder="••••••••"
               required
             />
-          </div>
-          
-          <div className="flex items-center justify-between mb-6">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2 accent-blue-600" />
-              <span className="text-sm text-gray-600">Recordar contraseña</span>
-            </label>
-            <a href="#" className="text-sm text-blue-600 hover:underline">¿Olvidaste tu contraseña?</a>
           </div>
           
           <button
@@ -442,8 +442,8 @@ function RegisterPage({ handleRegister, registerForm, setRegisterForm, setCurren
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             >
-              <option value="seller">Vendedor</option>
-              <option value="buyer">Comprador</option>
+              <option value="comprador">Comprador</option>
+              <option value="vendedor">Vendedor</option>
             </select>
           </div>
           
@@ -480,75 +480,113 @@ function RegisterPage({ handleRegister, registerForm, setRegisterForm, setCurren
   );
 }
 
-function Dashboard({ user, auctions }) {
+function Dashboard({ user, auctions, setCurrentView }) {
+  const userAuctions = user?.role === 'vendedor' 
+    ? auctions.filter(a => a.vendedor === user.name)
+    : auctions.filter(a => a.status === 'active');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-4xl font-bold mb-8 text-blue-700">Bienvenido, {user?.name}</h1>
+        <h1 className="text-4xl font-bold mb-8 text-blue-700">
+          Bienvenido, {user?.name} 
+          <span className="text-2xl text-gray-500 ml-3">({user?.role})</span>
+        </h1>
         
-        {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center border-l-4 border-blue-500">
-            <div className="text-4xl font-bold text-blue-600 mb-2">5</div>
-            <p className="text-gray-600 font-medium">Pujas Activas</p>
+            <div className="text-4xl font-bold text-blue-600 mb-2">
+              {userAuctions.length}
+            </div>
+            <p className="text-gray-600 font-medium">
+              {user?.role === 'vendedor' ? 'Mis Subastas' : 'Subastas Disponibles'}
+            </p>
           </div>
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center border-l-4 border-green-500">
-            <div className="text-4xl font-bold text-green-600 mb-2">3</div>
-            <p className="text-gray-600 font-medium">Subastas Ganadas</p>
+            <div className="text-4xl font-bold text-green-600 mb-2">
+              {user?.role === 'vendedor' ? '2' : '3'}
+            </div>
+            <p className="text-gray-600 font-medium">
+              {user?.role === 'vendedor' ? 'Ventas Completadas' : 'Subastas Ganadas'}
+            </p>
           </div>
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center border-l-4 border-purple-500">
-            <div className="text-4xl font-bold text-purple-600 mb-2">1</div>
-            <p className="text-gray-600 font-medium">Vehículos Vendidos</p>
+            <div className="text-4xl font-bold text-purple-600 mb-2">
+              {user?.role === 'vendedor' ? '$45,000' : '5'}
+            </div>
+            <p className="text-gray-600 font-medium">
+              {user?.role === 'vendedor' ? 'Total Vendido' : 'Pujas Activas'}
+            </p>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
               <h3 className="text-xl font-bold mb-6 text-gray-800">Acciones Rápidas</h3>
+              
+              {user?.role === 'vendedor' && (
+                <button 
+                  onClick={() => setCurrentView('create-auction')}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-lg mb-4 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-2 font-bold shadow-lg"
+                >
+                  <Plus className="h-5 w-5" />
+                  Crear Subasta
+                </button>
+              )}
+              
               <button 
-                onClick={() => alert('Ir a Crear Subasta desde sidebar')}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-lg mb-4 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-2 font-bold shadow-lg"
+                onClick={() => setCurrentView('auctions')}
+                className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition-colors font-bold"
               >
-                <Plus className="h-5 w-5" />
-                Crear Subasta
-              </button>
-              <button 
-                onClick={() => alert('Ir a Mis Pujas')}
-                className="w-full bg-gray-600 text-white py-4 rounded-lg hover:bg-gray-700 transition-colors font-bold"
-              >
-                Ver Mis Pujas
+                {user?.role === 'vendedor' ? 'Ver Mis Subastas' : 'Ver Subastas'}
               </button>
             </div>
             
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h4 className="text-lg font-bold mb-4 text-gray-800">Notificaciones</h4>
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                <p className="text-sm text-gray-700 font-medium mb-1">Nueva puja en Toyota Camry</p>
+                <p className="text-sm text-gray-700 font-medium mb-1">
+                  {user?.role === 'vendedor' 
+                    ? 'Nueva puja en tu vehículo' 
+                    : 'Nueva subasta disponible'}
+                </p>
                 <p className="text-xs text-gray-500">Hace 5 minutos</p>
               </div>
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-2xl font-bold mb-8 text-gray-800">Mis Subastas Recientes</h3>
-              <div className="grid md:grid-cols-2 gap-6">
-                {auctions.slice(0, 2).map((auction) => (
-                  <div key={auction.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
-                    <div className={`h-32 ${auction.color} rounded-lg mb-4 flex items-center justify-center`}>
-                      <Car className="h-12 w-12 text-white" />
+              <h3 className="text-2xl font-bold mb-8 text-gray-800">
+                {user?.role === 'vendedor' ? 'Mis Subastas' : 'Subastas Disponibles'}
+              </h3>
+              {userAuctions.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {userAuctions.slice(0, 4).map((auction) => (
+                    <div key={auction.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                         onClick={() => setCurrentView('auctions')}>
+                      <div className={`h-32 ${auction.color} rounded-lg mb-4 flex items-center justify-center`}>
+                        <Car className="h-12 w-12 text-white" />
+                      </div>
+                      <h4 className="font-bold text-lg mb-2 text-gray-800">{auction.title}</h4>
+                      <p className="text-sm text-gray-600 mb-2">Estado: {auction.status}</p>
+                      <p className="text-blue-600 font-bold text-xl">
+                        Puja actual: ${auction.currentBid.toLocaleString()}
+                      </p>
                     </div>
-                    <h4 className="font-bold text-lg mb-2 text-gray-800">{auction.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">Estado: Activa</p>
-                    <p className="text-blue-600 font-bold text-xl">
-                      Puja actual: ${auction.currentBid.toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Car className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">
+                    {user?.role === 'vendedor' 
+                      ? 'No has creado subastas aún' 
+                      : 'No hay subastas disponibles'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -573,21 +611,18 @@ function AuctionDetail({
           onClick={() => setCurrentView('auctions')}
           className="text-blue-600 hover:text-blue-800 mb-6 flex items-center gap-2 font-medium"
         >
-          ← Ver subastas
+          ← Volver a subastas
         </button>
         
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h1 className="text-3xl font-bold mb-6 text-gray-800">{selectedAuction?.title}</h1>
               
-              {/* Main Image */}
               <div className={`h-80 ${selectedAuction?.color} rounded-2xl mb-6 flex items-center justify-center`}>
                 <Car className="h-32 w-32 text-white" />
               </div>
               
-              {/* Thumbnails */}
               <div className="grid grid-cols-4 gap-3 mb-8">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="h-20 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors">
@@ -596,7 +631,6 @@ function AuctionDetail({
                 ))}
               </div>
 
-              {/* Specifications */}
               <div className="grid md:grid-cols-2 gap-8 mb-8">
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h3 className="text-xl font-bold mb-4 text-gray-800">Especificaciones</h3>
@@ -638,7 +672,6 @@ function AuctionDetail({
                 </div>
               </div>
 
-              {/* Seller Info */}
               <div className="bg-blue-50 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">Información del Vendedor</h3>
                 <div className="flex items-center gap-4">
@@ -646,7 +679,7 @@ function AuctionDetail({
                     <User className="h-8 w-8 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-lg text-gray-800">{selectedAuction?.seller}</p>
+                    <p className="font-bold text-lg text-gray-800">{selectedAuction?.vendedor}</p>
                     <p className="text-gray-600">Vendedor verificado • 4.8/5 ⭐</p>
                   </div>
                 </div>
@@ -654,7 +687,6 @@ function AuctionDetail({
             </div>
           </div>
 
-          {/* Bid Panel */}
           <div className="bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-4">
             <div className="text-center mb-6">
               <div className="text-4xl font-bold text-blue-600 mb-2">
@@ -670,28 +702,36 @@ function AuctionDetail({
             </div>
 
             {user ? (
-              <form onSubmit={handleBid}>
-                <div className="mb-6">
-                  <label className="block text-gray-700 font-bold mb-2">
-                    Tu puja (mínimo ${(selectedAuction?.currentBid + 50)?.toLocaleString()}):
-                  </label>
-                  <input
-                    type="number"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    min={selectedAuction?.currentBid + 50}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-lg"
-                    placeholder={(selectedAuction?.currentBid + 100)?.toString()}
-                  />
+              user.role === 'comprador' ? (
+                <form onSubmit={handleBid}>
+                  <div className="mb-6">
+                    <label className="block text-gray-700 font-bold mb-2">
+                      Tu puja (mínimo ${(selectedAuction?.currentBid + 50)?.toLocaleString()}):
+                    </label>
+                    <input
+                      type="number"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      min={selectedAuction?.currentBid + 50}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-lg"
+                      placeholder={(selectedAuction?.currentBid + 100)?.toString()}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105"
+                  >
+                    <Gavel className="h-5 w-5" />
+                    Realizar Puja
+                  </button>
+                </form>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-yellow-800 text-center font-medium">
+                    Como vendedor no puedes realizar pujas
+                  </p>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105"
-                >
-                  <Gavel className="h-5 w-5" />
-                  Realizar Puja
-                </button>
-              </form>
+              )
             ) : (
               <button
                 onClick={() => setCurrentView('login')}
@@ -743,6 +783,8 @@ function AuctionDetail({
 }
 
 function AuctionsPage({ auctions, setCurrentView, setSelectedAuction, formatTimeRemaining, user }) {
+  const activeAuctions = auctions.filter(a => a.status === 'active');
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -757,7 +799,7 @@ function AuctionsPage({ auctions, setCurrentView, setSelectedAuction, formatTime
                 className="pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all w-full sm:w-80"
               />
             </div>
-            {user && (
+            {user && user.role === 'vendedor' && (
               <button 
                 onClick={() => setCurrentView('create-auction')}
                 className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all flex items-center gap-2 font-bold shadow-lg whitespace-nowrap"
@@ -769,46 +811,53 @@ function AuctionsPage({ auctions, setCurrentView, setSelectedAuction, formatTime
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {auctions.map(auction => (
-            <div key={auction.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <div className={`h-48 ${auction.color} flex items-center justify-center`}>
-                <Car className="h-16 w-16 text-white" />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">{auction.title}</h3>
-                <p className="text-gray-600 mb-3">Por: {auction.seller}</p>
-                <div className="mb-4">
-                  <p className="text-blue-600 font-bold text-2xl mb-1">
-                    ${auction.currentBid.toLocaleString()}
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    Precio base: ${auction.basePrice.toLocaleString()}
-                  </p>
+        {activeAuctions.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {activeAuctions.map(auction => (
+              <div key={auction.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className={`h-48 ${auction.color} flex items-center justify-center`}>
+                  <Car className="h-16 w-16 text-white" />
                 </div>
-                <div className="flex items-center gap-2 mb-6 text-orange-600 font-semibold">
-                  <Clock className="h-4 w-4" />
-                  <span>{formatTimeRemaining(auction.endTime)}</span>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2 text-gray-800">{auction.title}</h3>
+                  <p className="text-gray-600 mb-3">Por: {auction.vendedor}</p>
+                  <div className="mb-4">
+                    <p className="text-blue-600 font-bold text-2xl mb-1">
+                      ${auction.currentBid.toLocaleString()}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Precio base: ${auction.basePrice.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 mb-6 text-orange-600 font-semibold">
+                    <Clock className="h-4 w-4" />
+                    <span>{formatTimeRemaining(auction.endTime)}</span>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setSelectedAuction(auction);
+                      setCurrentView('auction-detail');
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg transform hover:scale-105"
+                  >
+                    Ver Detalles
+                  </button>
                 </div>
-                <button 
-                  onClick={() => {
-                    setSelectedAuction(auction);
-                    setCurrentView('auction-detail');
-                  }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg transform hover:scale-105"
-                >
-                  Ver Detalles y Pujar
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <Car className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+            <p className="text-xl text-gray-500">No hay subastas activas en este momento</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function CreateAuction({ user, auctions, setAuctions, setCurrentView }) {
+function CreateAuction({ user, auctions, setAuctions, setCurrentView, loadAuctions }) {
   const [auctionForm, setAuctionForm] = useState({
     title: '',
     brand: '',
@@ -819,24 +868,48 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView }) {
     endDate: ''
   });
 
-  const handleCreateAuction = (e) => {
+  const handleCreateAuction = async (e) => {
     e.preventDefault();
-    const newAuction = {
-      id: auctions.length + 1,
-      ...auctionForm,
-      year: parseInt(auctionForm.year),
-      basePrice: parseFloat(auctionForm.basePrice),
-      currentBid: parseFloat(auctionForm.basePrice),
-      endTime: new Date(auctionForm.endDate),
-      seller: user.name,
-      status: 'active',
-      image: '/api/placeholder/300/200',
-      color: 'bg-blue-400'
-    };
     
-    setAuctions([...auctions, newAuction]);
-    alert('¡Subasta creada exitosamente!');
-    setCurrentView('dashboard');
+    try {
+      const payload = {
+        title: auctionForm.title,
+        brand: auctionForm.brand,
+        model: auctionForm.model,
+        year: parseInt(auctionForm.year),
+        description: auctionForm.description,
+        basePrice: parseFloat(auctionForm.basePrice),
+        endDate: auctionForm.endDate
+      };
+
+      const { data } = await api.post('/auctions', payload);
+      
+      // Recargar todas las subastas desde el servidor
+      await loadAuctions();
+      
+      alert('¡Subasta creada exitosamente!');
+      setCurrentView('dashboard');
+    } catch (error) {
+      const msg = error?.response?.data?.error || 'Error al crear la subasta';
+      alert(msg);
+      
+      // Si falla la API, crear localmente (solo para desarrollo)
+      const newAuction = {
+        id: auctions.length + 1,
+        ...auctionForm,
+        year: parseInt(auctionForm.year),
+        basePrice: parseFloat(auctionForm.basePrice),
+        currentBid: parseFloat(auctionForm.basePrice),
+        endTime: new Date(auctionForm.endDate),
+        vendedor: user.name,
+        status: 'active',
+        color: ['bg-blue-400', 'bg-green-400', 'bg-red-400', 'bg-purple-400'][Math.floor(Math.random() * 4)]
+      };
+      
+      setAuctions([...auctions, newAuction]);
+      alert('¡Subasta creada localmente (modo desarrollo)!');
+      setCurrentView('dashboard');
+    }
   };
 
   return (
@@ -853,7 +926,6 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView }) {
         
         <form onSubmit={handleCreateAuction} className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="grid lg:grid-cols-2">
-            {/* Left Column */}
             <div className="p-8 border-r border-gray-200">
               <h3 className="text-2xl font-bold mb-6 text-blue-600">Información del Vehículo</h3>
               
@@ -923,7 +995,6 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView }) {
               </div>
             </div>
 
-            {/* Right Column */}
             <div className="p-8 bg-gray-50">
               <h3 className="text-2xl font-bold mb-6 text-blue-600">Configuración de Subasta</h3>
               
@@ -982,21 +1053,100 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView }) {
    COMPONENTE PRINCIPAL
    ========================= */
 
-const mockAuctions = [
-  { id: 1, title: 'Toyota Camry 2020', brand: 'Toyota', model: 'Camry', year: 2020, basePrice: 15000, currentBid: 17500, endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), image: '/api/placeholder/300/200', seller: 'María González', status: 'active', color: 'bg-green-400' },
-  { id: 2, title: 'Honda Civic 2019', brand: 'Honda', model: 'Civic', year: 2019, basePrice: 12000, currentBid: 13750, endTime: new Date(Date.now() + 5 * 60 * 60 * 1000), image: '/api/placeholder/300/200', seller: 'Carlos Mendoza', status: 'active', color: 'bg-red-400' },
-  { id: 3, title: 'Ford Mustang 2018', brand: 'Ford', model: 'Mustang', year: 2018, basePrice: 20000, currentBid: 22500, endTime: new Date(Date.now() + 24 * 60 * 60 * 1000), image: '/api/placeholder/300/200', seller: 'Ana López', status: 'active', color: 'bg-green-500' }
-];
-
 const CarBid = () => {
   const [currentView, setCurrentView] = useState('home');
   const [user, setUser] = useState(null);
-  const [auctions, setAuctions] = useState(mockAuctions);
+  const [auctions, setAuctions] = useState([]);
   const [selectedAuction, setSelectedAuction] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [registerForm, setRegisterForm] = useState({ firstName: '', lastname: '', email: '', password: '', phone: '', role: 'buyer' });
+  const [registerForm, setRegisterForm] = useState({ 
+    firstName: '', 
+    lastname: '', 
+    email: '', 
+    password: '', 
+    phone: '', 
+    role: 'comprador' 
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('carbid_token');
+    if (token) {
+      loadUserData();
+    }
+    loadAuctions();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+    } catch (error) {
+      console.error('Error cargando usuario:', error);
+      localStorage.removeItem('carbid_token');
+    }
+  };
+
+  const loadAuctions = async () => {
+    try {
+      const { data } = await api.get('/auctions');
+      const auctionsData = data.auctions || [];
+      
+      // Convertir las fechas de string a Date objects
+      const processedAuctions = auctionsData.map(auction => ({
+        ...auction,
+        endTime: new Date(auction.endTime || auction.endDate),
+        color: auction.color || ['bg-blue-400', 'bg-green-400', 'bg-red-400', 'bg-purple-400'][Math.floor(Math.random() * 4)]
+      }));
+      
+      setAuctions(processedAuctions);
+    } catch (error) {
+      console.error('Error cargando subastas:', error);
+      // Si falla la API, usar datos mock para desarrollo
+      setAuctions([
+        { 
+          id: 1, 
+          title: 'Toyota Camry 2020', 
+          brand: 'Toyota', 
+          model: 'Camry', 
+          year: 2020, 
+          basePrice: 15000, 
+          currentBid: 17500, 
+          endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), 
+          vendedor: 'María González', 
+          status: 'active', 
+          color: 'bg-green-400' 
+        },
+        { 
+          id: 2, 
+          title: 'Honda Civic 2019', 
+          brand: 'Honda', 
+          model: 'Civic', 
+          year: 2019, 
+          basePrice: 12000, 
+          currentBid: 13750, 
+          endTime: new Date(Date.now() + 5 * 60 * 60 * 1000), 
+          vendedor: 'Carlos Mendoza', 
+          status: 'active', 
+          color: 'bg-red-400' 
+        },
+        { 
+          id: 3, 
+          title: 'Ford Mustang 2018', 
+          brand: 'Ford', 
+          model: 'Mustang', 
+          year: 2018, 
+          basePrice: 20000, 
+          currentBid: 22500, 
+          endTime: new Date(Date.now() + 24 * 60 * 60 * 1000), 
+          vendedor: 'Ana López', 
+          status: 'active', 
+          color: 'bg-blue-500' 
+        }
+      ]);
+    }
+  };
 
   const formatTimeRemaining = (endTime) => {
     const now = new Date();
@@ -1012,15 +1162,23 @@ const CarBid = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setUser({ id: 1, name: 'Juan Pérez', email: loginForm.email, role: 'both' });
-    setCurrentView('dashboard');
-    setLoginForm({ email: '', password: '' });
+    try {
+      const { data } = await api.post('/auth/login', {
+        email: loginForm.email,
+        password: loginForm.password
+      });
+      
+      localStorage.setItem('carbid_token', data.token);
+      setUser(data.user);
+      setCurrentView('dashboard');
+      setLoginForm({ email: '', password: '' });
+    } catch (error) {
+      const msg = error?.response?.data?.error || 'Error al iniciar sesión. Verifica tus credenciales.';
+      alert(msg);
+    }
   };
-
-  const TOKEN_KEY = 'carbid_token';
-  const saveToken = (t) => localStorage.setItem(TOKEN_KEY, t);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -1030,44 +1188,60 @@ const CarBid = () => {
         lastname: registerForm.lastname.trim(),
         email: registerForm.email.trim(),
         password: registerForm.password,
-        role: registerForm.role,         // 'buyer' | 'seller'
+        role: registerForm.role,
         phone: registerForm.phone?.trim() || null
       };
 
-      const { data } = await axios.post('/api/auth/register', payload);
+      const { data } = await api.post('/auth/register', payload);
 
-      // guarda sesión
-      saveToken(data.token);
-      setUser({
-        id: data.user.id,
-        name: data.user.name,
-        lastname: data.user.lastname,
-        email: data.user.email,
-        role: data.user.role,
-        phone: data.user.phone
+      localStorage.setItem('carbid_token', data.token);
+      setUser(data.user);
+      setRegisterForm({ 
+        firstName: '', 
+        lastname: '', 
+        email: '', 
+        password: '', 
+        phone: '', 
+        role: 'comprador' 
       });
-
-      // limpia y navega
-      setRegisterForm({ firstName: '', lastname: '', email: '', password: '', phone: '', role: 'buyer' });
       setCurrentView('dashboard');
-    } catch (err) {
-      const msg = err?.response?.data?.error || 'No se pudo registrar. Revisa los datos.';
+    } catch (error) {
+      const msg = error?.response?.data?.error || 'No se pudo registrar. Revisa los datos.';
       alert(msg);
     }
   };
 
-  const handleBid = (e) => {
+  const handleLogout = () => {
+    localStorage.removeItem('carbid_token');
+    setUser(null);
+    setCurrentView('home');
+  };
+
+  const handleBid = async (e) => {
     e.preventDefault();
-    if (!bidAmount || parseFloat(bidAmount) <= selectedAuction.currentBid) return;
-    const updatedAuctions = auctions.map(auction =>
-      auction.id === selectedAuction.id
-        ? { ...auction, currentBid: parseFloat(bidAmount) }
-        : auction
-    );
-    setAuctions(updatedAuctions);
-    setSelectedAuction({ ...selectedAuction, currentBid: parseFloat(bidAmount) });
-    setBidAmount('');
-    alert('¡Puja realizada exitosamente!');
+    if (!bidAmount || parseFloat(bidAmount) <= selectedAuction.currentBid) {
+      alert('La puja debe ser mayor a la oferta actual');
+      return;
+    }
+
+    try {
+      const { data } = await api.post(`/auctions/${selectedAuction.id}/bid`, {
+        amount: parseFloat(bidAmount)
+      });
+
+      const updatedAuctions = auctions.map(auction =>
+        auction.id === selectedAuction.id
+          ? { ...auction, currentBid: parseFloat(bidAmount) }
+          : auction
+      );
+      setAuctions(updatedAuctions);
+      setSelectedAuction({ ...selectedAuction, currentBid: parseFloat(bidAmount) });
+      setBidAmount('');
+      alert('¡Puja realizada exitosamente!');
+    } catch (error) {
+      const msg = error?.response?.data?.error || 'Error al realizar la puja';
+      alert(msg);
+    }
   };
 
   const renderCurrentView = () => {
@@ -1091,7 +1265,7 @@ const CarBid = () => {
           />
         );
       case 'dashboard':
-        return <Dashboard user={user} auctions={auctions} />;
+        return <Dashboard user={user} auctions={auctions} setCurrentView={setCurrentView} />;
       case 'auctions':
         return (
           <AuctionsPage
@@ -1115,13 +1289,28 @@ const CarBid = () => {
           />
         );
       case 'create-auction':
-        return (
+        return user && user.role === 'vendedor' ? (
           <CreateAuction
             user={user}
             auctions={auctions}
             setAuctions={setAuctions}
             setCurrentView={setCurrentView}
+            loadAuctions={loadAuctions}
           />
+        ) : (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+              <Car className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso Denegado</h2>
+              <p className="text-gray-600 mb-6">Solo los vendedores pueden crear subastas</p>
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700"
+              >
+                Volver al Dashboard
+              </button>
+            </div>
+          </div>
         );
       default:
         return (
@@ -1143,6 +1332,7 @@ const CarBid = () => {
         setCurrentView={setCurrentView}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
+        handleLogout={handleLogout}
       />
       {renderCurrentView()}
     </div>

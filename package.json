@@ -1,0 +1,21 @@
+{
+  "name": "proyectopw",
+  "version": "1.0.0",
+  "description": "npm install mysql2\r npm install axios\r npm install cors\r ------------------------------------------------------------\r bcryptjs → encripta contraseñas\r jsonwebtoken → genera tokens JWT para sesiones seguras\r npm install bcryptjs jsonwebtoken",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgabs12/ProyectoPW.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mgabs12/ProyectoPW/issues"
+  },
+  "homepage": "https://github.com/mgabs12/ProyectoPW#readme"
+}
