@@ -4,7 +4,12 @@ const Bid = require('../models/Bid');
 // Crear subasta (solo vendedores)
 exports.createAuction = async (req, res) => {
   try {
-    const { title, brand, model, year, description, basePrice, endDate, image_url } = req.body;
+    const { title, brand, model, year, description, base_price, end_time } = req.body;
+
+    let image_url = null;
+    if (req.files && req.files.length > 0) {
+      image_url = `/uploads/vehicles/${req.files[0].filename}`;
+    }
 
     // Validar que endDate sea una fecha válida
     const endTime = new Date(endDate);
@@ -19,6 +24,13 @@ exports.createAuction = async (req, res) => {
       return res.status(400).json({
         error: 'La fecha de finalización debe ser futura.'
       });
+    }
+
+    // Procesar imágenes subidas
+    if (req.files && req.files.length > 0) {
+      // Tomar la primera imagen como principal
+      // En producción, puedes guardar todas en una tabla separada
+      image_url = `/uploads/vehicles/${req.files[0].filename}`;
     }
 
     const auctionId = await Auction.create({
@@ -39,6 +51,7 @@ exports.createAuction = async (req, res) => {
       message: 'Subasta creada exitosamente',
       auction
     });
+    
   } catch (error) {
     console.error('Error al crear subasta:', error);
     res.status(500).json({
@@ -72,15 +85,14 @@ exports.getAllAuctions = async (req, res) => {
       bidCount: auction.bid_count || 0
     }));
 
-    res.json({
-      count: formattedAuctions.length,
-      auctions: formattedAuctions
+   res.json({
+      count: auctions.length,
+      auctions
     });
   } catch (error) {
     console.error('Error al obtener subastas:', error);
     res.status(500).json({
-      error: 'Error al obtener subastas.',
-      details: error.message
+      error: 'Error al obtener subastas.'
     });
   }
 };

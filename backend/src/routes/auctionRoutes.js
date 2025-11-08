@@ -1,11 +1,14 @@
+// backend/src/routes/auctionRoutes.js
 const express = require('express');
 const router = express.Router();
 const auctionController = require('../controllers/auctionController');
-const { authenticate, esVendedor, optionalAuth, esComprador } = require('../middleware/auth');
+const { authenticate, esVendedor, optionalAuth } = require('../middleware/auth');
 const { validate } = require('../middleware/validation');
 const { validateCreateAuction, validateId, validateSearchAuctions } = require('../utils/validators');
+const upload = require('../config/multer');
 
-console.log('Funciones disponibles:', Object.keys(auctionController));
+// Agrega esto para debug
+console.log('Funciones en auctionController:', Object.keys(auctionController));
 
 // GET /api/auctions - Obtener todas las subastas activas (público)
 router.get('/', optionalAuth, auctionController.getAllAuctions);
@@ -20,25 +23,20 @@ router.get('/my-auctions', authenticate, esVendedor, auctionController.getMyAuct
 router.get('/:id', validateId, validate, auctionController.getAuctionById);
 
 // POST /api/auctions - Crear subasta (requiere ser vendedor)
-router.post('/', authenticate, esVendedor, validateCreateAuction, validate, auctionController.createAuction);
+router.post(
+  '/', 
+  authenticate, 
+  esVendedor, 
+  upload.array('images', 5),
+  validateCreateAuction, 
+  validate, 
+  auctionController.createAuction
+);
 
 // PUT /api/auctions/:id/cancel - Cancelar subasta (requiere ser el vendedor)
 router.put('/:id/cancel', authenticate, esVendedor, validateId, validate, auctionController.cancelAuction);
 
 // PUT /api/auctions/:id/close - Cerrar subasta (para admin o proceso automático)
 router.put('/:id/close', authenticate, validateId, validate, auctionController.closeAuction);
-
-const getAllAuctions = async (req, res) => {
-        try {
-          const auctions = await Auction.findAll({
-            where: { status: 'active', end_time: { [Op.gt]: new Date() } },
-            include: [{ model: User, as: 'vendedor', attributes: ['username'] }]
-          });
-          res.json(auctions);
-        } catch (error) {
-          console.error('Error in getAllAuctions:', error);
-          res.status(500).json({ error: 'Failed to fetch auctions' });
-        }
-      };
 
 module.exports = router;
