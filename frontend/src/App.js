@@ -628,13 +628,13 @@ function AuctionDetail({
 }) {
   if (!selectedAuction) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Car className="h-24 w-24 text-gray-500 mx-auto mb-4" />
-          <p className="text-xl text-gray-400">Subasta no encontrada</p>
+          <Car className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+          <p className="text-xl text-gray-500">Subasta no encontrada</p>
           <button 
             onClick={() => setCurrentView('auctions')}
-            className="mt-4 bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-neutral-800 border-2 border-yellow-500"
+            className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700"
           >
             Ver todas las subastas
           </button>
@@ -644,90 +644,101 @@ function AuctionDetail({
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button 
           onClick={() => setCurrentView('auctions')}
-          className="text-yellow-400 hover:text-yellow-300 mb-6 flex items-center gap-2 font-medium"
+          className="text-blue-600 hover:text-blue-800 mb-6 flex items-center gap-2 font-medium"
         >
           ← Volver a subastas
         </button>
         
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <div className="bg-neutral-900 rounded-2xl shadow-lg p-8 border border-yellow-500">
-              <h1 className="text-3xl font-bold mb-6 text-white">{selectedAuction.title}</h1>
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <h1 className="text-3xl font-bold mb-6 text-gray-800">{selectedAuction.title}</h1>
               
-              <div className={`h-80 ${selectedAuction.color || 'bg-neutral-800'} rounded-2xl mb-6 flex items-center justify-center`}>
-                <Car className="h-32 w-32 text-white" />
+              <div className={`h-80 ${selectedAuction.color} rounded-2xl mb-6 flex items-center justify-center overflow-hidden`}>
+                {selectedAuction.imageUrl ? (
+                  <img 
+                    src={`http://localhost:5000${selectedAuction.imageUrl}`} 
+                    alt={selectedAuction.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <Car className="h-32 w-32 text-white" style={{ display: selectedAuction.imageUrl ? 'none' : 'block' }} />
               </div>
               
               <div className="grid grid-cols-4 gap-3 mb-8">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-20 bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
+                  <div key={i} className="h-20 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors">
                     <Car className="h-8 w-8 text-gray-400" />
                   </div>
                 ))}
               </div>
 
               <div className="mb-8">
-                <div className="bg-black rounded-xl p-6 border border-yellow-500">
-                  <h3 className="text-xl font-bold mb-4 text-white">Especificaciones</h3>
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-xl font-bold mb-4 text-gray-800">Especificaciones</h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex justify-between border-b border-gray-700 pb-3">
-                      <span className="font-medium text-gray-300">Marca:</span>
-                      <span className="font-bold text-white">{selectedAuction.brand}</span>
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
+                      <span className="font-medium text-gray-600">Marca:</span>
+                      <span className="font-bold text-gray-800">{selectedAuction.brand}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-700 pb-3">
-                      <span className="font-medium text-gray-300">Modelo:</span>
-                      <span className="font-bold text-white">{selectedAuction.model}</span>
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
+                      <span className="font-medium text-gray-600">Modelo:</span>
+                      <span className="font-bold text-gray-800">{selectedAuction.model}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-700 pb-3">
-                      <span className="font-medium text-gray-300">Año:</span>
-                      <span className="font-bold text-white">{selectedAuction.year}</span>
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
+                      <span className="font-medium text-gray-600">Año:</span>
+                      <span className="font-bold text-gray-800">{selectedAuction.year}</span>
                     </div>
-                    <div className="flex justify-between border-b border-gray-700 pb-3">
-                      <span className="font-medium text-gray-300">Precio Base:</span>
-                      <span className="font-bold text-white">${selectedAuction.basePrice?.toLocaleString()}</span>
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
+                      <span className="font-medium text-gray-600">Precio Base:</span>
+                      <span className="font-bold text-gray-800">${selectedAuction.basePrice?.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {selectedAuction.description && (
-                <div className="bg-black rounded-xl p-6 mb-8 border border-yellow-500">
-                  <h3 className="text-xl font-bold mb-4 text-white">Descripción</h3>
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <div className="bg-gray-50 rounded-xl p-6 mb-8">
+                  <h3 className="text-xl font-bold mb-4 text-gray-800">Descripción</h3>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {selectedAuction.description}
                   </p>
                 </div>
               )}
 
-              <div className="bg-neutral-900 rounded-xl p-6 border border-yellow-500">
-                <h3 className="text-xl font-bold mb-4 text-white">Información del Vendedor</h3>
+              <div className="bg-blue-50 rounded-xl p-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-800">Información del Vendedor</h3>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center border border-yellow-500">
+                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
                     <User className="h-8 w-8 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-lg text-white">{selectedAuction.vendedor}</p>
-                    <p className="text-gray-400">Vendedor verificado • 4.8/5 ⭐</p>
+                    <p className="font-bold text-lg text-gray-800">{selectedAuction.vendedor}</p>
+                    <p className="text-gray-600">Vendedor verificado • 4.8/5 ⭐</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-neutral-900 rounded-2xl shadow-lg p-6 h-fit sticky top-4 border border-yellow-500">
+          <div className="bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-4">
             <div className="text-center mb-6">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">
+              <div className="text-4xl font-bold text-blue-600 mb-2">
                 ${selectedAuction.currentBid?.toLocaleString()}
               </div>
-              <p className="text-gray-300 font-medium">Puja actual</p>
+              <p className="text-gray-600 font-medium">Puja actual</p>
             </div>
             
-            <div className="bg-gradient-to-r from-yellow-100 to-yellow-50 border border-yellow-200 p-4 rounded-xl mb-6 text-center">
-              <p className="font-bold text-yellow-700 text-lg">
+            <div className="bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-200 p-4 rounded-xl mb-6 text-center">
+              <p className="font-bold text-orange-700 text-lg">
                 Termina en: {formatTimeRemaining(selectedAuction.endTime)}
               </p>
             </div>
@@ -736,7 +747,7 @@ function AuctionDetail({
               user.role === 'comprador' ? (
                 <form onSubmit={handleBid}>
                   <div className="mb-6">
-                    <label className="block text-gray-300 font-bold mb-2">
+                    <label className="block text-gray-700 font-bold mb-2">
                       Tu puja (mínimo ${((selectedAuction.currentBid || selectedAuction.basePrice) + 50)?.toLocaleString()}):
                     </label>
                     <input
@@ -744,15 +755,15 @@ function AuctionDetail({
                       value={bidAmount}
                       onChange={(e) => setBidAmount(e.target.value)}
                       min={(selectedAuction.currentBid || selectedAuction.basePrice) + 50}
-                      className="w-full px-4 py-3 border-2 border-gray-700 rounded-lg focus:outline-none focus:border-yellow-500 transition-all text-lg bg-black text-white"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-lg"
                       placeholder={((selectedAuction.currentBid || selectedAuction.basePrice) + 100)?.toString()}
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-black to-neutral-900 text-white py-4 rounded-lg hover:from-neutral-900 hover:to-neutral-700 transition-all font-bold text-lg mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105 border-2 border-yellow-500"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105"
                   >
-                    <Gavel className="h-5 w-5 text-white" />
+                    <Gavel className="h-5 w-5" />
                     Realizar Puja
                   </button>
                 </form>
@@ -766,33 +777,33 @@ function AuctionDetail({
             ) : (
               <button
                 onClick={() => setCurrentView('login')}
-                className="w-full bg-gradient-to-r from-black to-neutral-900 text-white py-4 rounded-lg hover:from-neutral-900 hover:to-neutral-700 transition-all font-bold text-lg mb-4 shadow-lg border-2 border-yellow-500"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg mb-4 shadow-lg"
               >
                 Iniciar Sesión para Pujar
               </button>
             )}
 
-            <button className="w-full border-2 border-yellow-500 text-white py-3 rounded-lg hover:bg-black transition-colors mb-6 flex items-center justify-center gap-2 font-bold">
-              <Heart className="h-5 w-5 text-white" />
+            <button className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-50 transition-colors mb-6 flex items-center justify-center gap-2 font-bold">
+              <Heart className="h-5 w-5" />
               Agregar a Favoritos
             </button>
 
             <div className="border-t pt-6">
-              <h4 className="font-bold mb-4 text-white">Historial de Pujas</h4>
+              <h4 className="font-bold mb-4 text-gray-800">Historial de Pujas</h4>
               <div className="max-h-64 overflow-y-auto">
                 <div className="space-y-4">
                   {selectedAuction.currentBid > selectedAuction.basePrice ? (
-                    <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-gray-700">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-bold text-white">${selectedAuction.currentBid?.toLocaleString()}</p>
-                        <p className="text-sm text-gray-400">Puja más alta • Reciente</p>
+                        <p className="font-bold text-gray-800">${selectedAuction.currentBid?.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Puja más alta • Reciente</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-between items-center p-3 bg-black rounded-lg border border-gray-700">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-bold text-white">${selectedAuction.basePrice?.toLocaleString()}</p>
-                        <p className="text-sm text-gray-400">Precio base</p>
+                        <p className="font-bold text-gray-800">${selectedAuction.basePrice?.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Precio base</p>
                       </div>
                     </div>
                   )}
@@ -897,49 +908,149 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView, loadAuctio
     basePrice: '',
     endDate: ''
   });
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Manejar selección de imágenes
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Validar número de imágenes
+    if (files.length > 5) {
+      alert('Máximo 5 imágenes permitidas');
+      return;
+    }
+
+    // Validar tipo y tamaño de archivos
+    const validFiles = files.filter(file => {
+      const isImage = file.type.startsWith('image/');
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+      
+      if (!isImage) {
+        alert(`${file.name} no es una imagen válida`);
+        return false;
+      }
+      if (!isValidSize) {
+        alert(`${file.name} es muy grande (máximo 5MB)`);
+        return false;
+      }
+      return true;
+    });
+
+    setImages(validFiles);
+
+    // Crear previsualizaciones
+    const previews = validFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  };
+
+  // Eliminar imagen
+  const removeImage = (index) => {
+    const newImages = images.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    
+    // Liberar URL del objeto
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    setImages(newImages);
+    setImagePreviews(newPreviews);
+  };
 
   const handleCreateAuction = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
     try {
-      const payload = {
-        title: auctionForm.title,
-        brand: auctionForm.brand,
-        model: auctionForm.model,
-        year: parseInt(auctionForm.year),
-        description: auctionForm.description,
-        basePrice: parseFloat(auctionForm.basePrice),
-        endDate: auctionForm.endDate
-      };
+      // Validar fecha
+      const endDate = new Date(auctionForm.endDate);
+      const now = new Date();
+      
+      if (endDate <= now) {
+        setError('La fecha de cierre debe ser futura');
+        setLoading(false);
+        return;
+      }
 
-      const { data } = await api.post('/auctions', payload);
+      // Crear FormData para enviar archivos
+      const formData = new FormData();
+      formData.append('title', auctionForm.title.trim());
+      formData.append('brand', auctionForm.brand.trim());
+      formData.append('model', auctionForm.model.trim());
+      formData.append('year', auctionForm.year);
+      formData.append('description', auctionForm.description.trim());
+      formData.append('basePrice', auctionForm.basePrice);
+      formData.append('endDate', auctionForm.endDate);
+
+      // Agregar imágenes
+      images.forEach((image, index) => {
+        formData.append('images', image);
+      });
+
+      console.log('Enviando subasta con imágenes...');
+
+      // Configurar axios para enviar FormData
+      const { data } = await api.post('/auctions', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log('Respuesta del servidor:', data);
+      
+      // Limpiar previsualizaciones
+      imagePreviews.forEach(preview => URL.revokeObjectURL(preview));
       
       // Recargar todas las subastas desde el servidor
       await loadAuctions();
       
       alert('¡Subasta creada exitosamente!');
+      
+      // Limpiar formulario
+      setAuctionForm({
+        title: '',
+        brand: '',
+        model: '',
+        year: '',
+        description: '',
+        basePrice: '',
+        endDate: ''
+      });
+      setImages([]);
+      setImagePreviews([]);
+      
       setCurrentView('dashboard');
     } catch (error) {
-      const msg = error?.response?.data?.error || 'Error al crear la subasta';
-      alert(msg);
+      console.error('Error completo:', error);
+      console.error('Response data:', error?.response?.data);
       
-      // Si falla la API, crear localmente (solo para desarrollo)
-      const newAuction = {
-        id: auctions.length + 1,
-        ...auctionForm,
-        year: parseInt(auctionForm.year),
-        basePrice: parseFloat(auctionForm.basePrice),
-        currentBid: parseFloat(auctionForm.basePrice),
-        endTime: new Date(auctionForm.endDate),
-        vendedor: user.name,
-        status: 'active',
-        color: ['bg-neutral-800', 'bg-green-400', 'bg-red-400', 'bg-purple-400'][Math.floor(Math.random() * 4)]
-      };
+      let errorMessage = 'Error al crear la subasta';
       
-      setAuctions([...auctions, newAuction]);
-      alert('¡Subasta creada localmente (modo desarrollo)!');
-      setCurrentView('dashboard');
+      if (error?.response?.data?.details) {
+        const details = error.response.data.details;
+        if (Array.isArray(details)) {
+          errorMessage = details.map(d => `${d.field}: ${d.message}`).join('\n');
+        } else {
+          errorMessage = details;
+        }
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setError(errorMessage);
+      alert(errorMessage);
     }
+    
+    setLoading(false);
+  };
+
+  // Obtener fecha mínima (ahora + 1 hora)
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    return now.toISOString().slice(0, 16);
   };
 
   return (
@@ -948,19 +1059,40 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView, loadAuctio
         <div className="bg-gradient-to-r from-black to-neutral-900 text-white p-8 rounded-2xl mb-8 border border-yellow-500">
           <div className="flex items-center gap-4">
             <div className="bg-white p-3 rounded-full">
-              <Car className="h-8 w-8 text-white" />
+              <Car className="h-8 w-8 text-black" />
             </div>
-            <h1 className="text-4xl font-bold text-yellow-400">Crear Subasta</h1>
+            <div>
+              <h1 className="text-4xl font-bold text-yellow-400">Crear Subasta</h1>
+              <p className="text-gray-300 mt-2">Publica tu vehículo para subasta</p>
+            </div>
           </div>
         </div>
+
+        {error && (
+          <div className="bg-red-900 border-l-4 border-red-500 p-4 mb-6 rounded">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-200 whitespace-pre-line">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         <form onSubmit={handleCreateAuction} className="bg-neutral-900 rounded-2xl shadow-lg overflow-hidden border border-yellow-500">
           <div className="grid lg:grid-cols-2">
+            {/* Columna izquierda */}
             <div className="p-8 border-r border-gray-700">
               <h3 className="text-2xl font-bold mb-6 text-yellow-400">Información del Vehículo</h3>
               
               <div className="mb-6">
-                <label className="block text-gray-300 font-bold mb-2">Título de la Subasta:</label>
+                <label className="block text-gray-300 font-bold mb-2">
+                  Título de la Subasta: <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={auctionForm.title}
@@ -968,102 +1100,242 @@ function CreateAuction({ user, auctions, setAuctions, setCurrentView, loadAuctio
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
                   placeholder="Ej: Toyota Camry 2020 en excelente estado"
                   required
+                  minLength={5}
+                  maxLength={255}
                 />
               </div>
               
               <div className="mb-6">
-                <label className="block text-gray-300 font-bold mb-2">Marca:</label>
-                <input
-                  type="text"
+                <label className="block text-gray-300 font-bold mb-2">
+                  Marca: <span className="text-red-500">*</span>
+                </label>
+                <select
                   value={auctionForm.brand}
                   onChange={(e) => setAuctionForm({...auctionForm, brand: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
                   required
-                />
+                >
+                  <option value="">Seleccionar marca</option>
+                  <option value="Toyota">Toyota</option>
+                  <option value="Honda">Honda</option>
+                  <option value="Ford">Ford</option>
+                  <option value="Chevrolet">Chevrolet</option>
+                  <option value="Nissan">Nissan</option>
+                  <option value="Mazda">Mazda</option>
+                  <option value="Hyundai">Hyundai</option>
+                  <option value="Kia">Kia</option>
+                  <option value="Volkswagen">Volkswagen</option>
+                  <option value="BMW">BMW</option>
+                  <option value="Mercedes-Benz">Mercedes-Benz</option>
+                  <option value="Audi">Audi</option>
+                </select>
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-300 font-bold mb-2">Modelo:</label>
+                <label className="block text-gray-300 font-bold mb-2">
+                  Modelo: <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={auctionForm.model}
                   onChange={(e) => setAuctionForm({...auctionForm, model: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
+                  placeholder="Ej: Corolla"
                   required
+                  maxLength={100}
                 />
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-300 font-bold mb-2">Año:</label>
+                <label className="block text-gray-300 font-bold mb-2">
+                  Año: <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="number"
                   value={auctionForm.year}
                   onChange={(e) => setAuctionForm({...auctionForm, year: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
                   min="1990"
-                  max="2025"
+                  max={new Date().getFullYear() + 1}
                   required
                 />
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-300 font-bold mb-2">Descripción:</label>
+                <label className="block text-gray-300 font-bold mb-2">
+                  Descripción: <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   value={auctionForm.description}
                   onChange={(e) => setAuctionForm({...auctionForm, description: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
                   rows={4}
-                  placeholder="Describe el estado, características especiales, etc."
+                  placeholder="Describe el estado, características especiales, mantenimientos, etc."
                   required
+                  maxLength={2000}
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  {auctionForm.description.length}/2000 caracteres
+                </p>
               </div>
             </div>
 
+            {/* Columna derecha */}
             <div className="p-8 bg-black">
               <h3 className="text-2xl font-bold mb-6 text-yellow-400">Configuración de Subasta</h3>
               
               <div className="mb-6">
-                <label className="block text-gray-300 font-bold mb-2">Precio Base ($):</label>
+                <label className="block text-gray-300 font-bold mb-2">
+                  Precio Base ($): <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="number"
                   value={auctionForm.basePrice}
                   onChange={(e) => setAuctionForm({...auctionForm, basePrice: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
-                  min="1000"
+                  min="100"
+                  step="50"
                   placeholder="10000"
                   required
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Precio mínimo: $100
+                </p>
               </div>
 
-              <div className="mb-8">
-                <label className="block text-gray-300 font-bold mb-2">Fecha de Cierre:</label>
+              <div className="mb-6">
+                <label className="block text-gray-300 font-bold mb-2">
+                  Fecha de Cierre: <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="datetime-local"
                   value={auctionForm.endDate}
                   onChange={(e) => setAuctionForm({...auctionForm, endDate: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all bg-black text-white"
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={getMinDateTime()}
                   required
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  La subasta debe durar al menos 1 hora
+                </p>
               </div>
 
-              <h4 className="text-lg font-bold mb-4 text-gray-200">Imágenes del Vehículo</h4>
-              <div className="border-2 border-dashed border-yellow-500 p-8 text-center bg-black rounded-xl mb-8">
-                <Car className="h-16 w-16 text-white mx-auto mb-4" />
-                <p className="text-gray-300 mb-4 font-medium">Arrastra las imágenes aquí o</p>
-                <button
-                  type="button"
-                  className="bg-gradient-to-r from-black to-neutral-900 text-white px-6 py-3 rounded-lg hover:from-neutral-900 hover:to-neutral-700 transition-all font-bold shadow-lg border-2 border-yellow-500"
+              {/* Sección de imágenes */}
+              <div className="mb-6">
+                <h4 className="text-lg font-bold mb-4 text-gray-200">
+                  Imágenes del Vehículo (Máx. 5)
+                </h4>
+                
+                {/* Input oculto */}
+                <input
+                  type="file"
+                  id="imageInput"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+
+                {/* Zona de carga */}
+                <label
+                  htmlFor="imageInput"
+                  className="border-2 border-dashed border-yellow-500 p-6 text-center bg-neutral-900 rounded-xl cursor-pointer hover:bg-neutral-800 transition-colors block"
                 >
-                  Seleccionar Archivos
-                </button>
+                  <Car className="h-12 w-12 text-yellow-400 mx-auto mb-3" />
+                  <p className="text-gray-300 mb-2 font-medium">
+                    Haz clic para seleccionar imágenes
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    JPG, PNG, GIF, WEBP (máx. 5MB cada una)
+                  </p>
+                </label>
+
+                {/* Previsualizaciones */}
+                {imagePreviews.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-3">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border-2 border-gray-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        {index === 0 && (
+                          <div className="absolute bottom-1 left-1 bg-yellow-500 text-black text-xs px-2 py-1 rounded font-bold">
+                            Principal
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Resumen */}
+              <div className="bg-neutral-900 border border-yellow-500 rounded-lg p-4 mb-6">
+                <h4 className="font-bold text-white mb-2">Resumen</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Vehículo:</span>
+                    <span className="font-medium text-white">
+                      {auctionForm.brand && auctionForm.model 
+                        ? `${auctionForm.brand} ${auctionForm.model}` 
+                        : 'No especificado'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Año:</span>
+                    <span className="font-medium text-white">{auctionForm.year || 'No especificado'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Precio base:</span>
+                    <span className="font-medium text-yellow-400">
+                      {auctionForm.basePrice ? `$${parseFloat(auctionForm.basePrice).toLocaleString()}` : '$0'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Imágenes:</span>
+                    <span className="font-medium text-white">{images.length}</span>
+                  </div>
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-black to-neutral-900 text-white py-4 rounded-xl hover:from-neutral-900 hover:to-neutral-700 transition-all font-bold text-lg shadow-lg transform hover:scale-105 border-2 border-yellow-500"
+                disabled={loading}
+                className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transform transition-all ${
+                  loading 
+                    ? 'bg-gray-600 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-black to-neutral-900 text-white hover:from-neutral-900 hover:to-neutral-700 hover:scale-105 border-2 border-yellow-500'
+                }`}
               >
-                CREAR SUBASTA
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    CREANDO SUBASTA...
+                  </span>
+                ) : (
+                  'CREAR SUBASTA'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('dashboard')}
+                disabled={loading}
+                className="w-full mt-4 py-3 border-2 border-gray-600 text-gray-300 rounded-lg font-bold hover:bg-neutral-900 transition-colors disabled:opacity-50"
+              >
+                Cancelar
               </button>
             </div>
           </div>
@@ -1192,31 +1464,67 @@ const CarBid = () => {
     }
   };
 
-  const handleBid = (e) => {
-    e.preventDefault();
-    if (!selectedAuction || !bidAmount) return;
+  const handleBid = async (e) => {
+  e.preventDefault();
+  
+  if (!selectedAuction) {
+    alert('No hay subasta seleccionada');
+    return;
+  }
 
-    const minBid = (selectedAuction.currentBid || selectedAuction.basePrice) + 50;
-    const bid = parseFloat(bidAmount);
+  const minBid = (selectedAuction.currentBid || selectedAuction.basePrice) + 50;
+  const bid = parseFloat(bidAmount);
 
-    if (bid < minBid) {
-      alert(`La puja debe ser al menos $${minBid}`);
-      return;
-    }
+  if (!bidAmount || isNaN(bid)) {
+    alert('Ingresa un monto válido');
+    return;
+  }
 
-    const updatedAuction = {
-      ...selectedAuction,
-      currentBid: bid,
-      lastBidder: user.name,
-    };
+  if (bid < minBid) {
+    alert(`La puja debe ser al menos $${minBid.toLocaleString()}`);
+    return;
+  }
 
-    setAuctions((prev) =>
-      prev.map((a) => (a.id === selectedAuction.id ? updatedAuction : a))
+  try {
+    console.log('Enviando puja:', {
+      auction_id: selectedAuction.id,
+      amount: bid
+    });
+
+    const { data } = await api.post('/bids', {
+      auction_id: selectedAuction.id,
+      amount: bid
+    });
+
+    console.log('✓ Puja exitosa:', data);
+
+    // Actualizar las subastas localmente
+    const updatedAuctions = auctions.map(auction =>
+      auction.id === selectedAuction.id
+        ? { ...auction, currentBid: bid }
+        : auction
     );
-    setSelectedAuction(updatedAuction);
+    setAuctions(updatedAuctions);
+    
+    // Actualizar la subasta seleccionada
+    setSelectedAuction({ 
+      ...selectedAuction, 
+      currentBid: bid,
+      lastBidder: user.name
+    });
+    
     setBidAmount('');
-    alert('¡Puja realizada con éxito!');
-  };
+    alert('¡Puja realizada exitosamente!');
+    
+  } catch (error) {
+    console.error('✗ Error al realizar puja:', error);
+    console.error('Response:', error?.response?.data);
+    
+    const msg = error?.response?.data?.error || 'Error al realizar la puja. Intenta nuevamente.';
+    alert(msg);
+  }
+};
+
 
   const handleLogout = () => {
     localStorage.removeItem('carbid_token');

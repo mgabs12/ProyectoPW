@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
 
 // Importar rutas
@@ -12,11 +13,10 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
 // Middleware de seguridad
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // CORS
 app.use(cors({
@@ -30,6 +30,10 @@ app.use(morgan('dev'));
 // Parser de JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Servir archivos estáticos (imágenes subidas)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+console.log('Sirviendo archivos estáticos desde:', path.join(__dirname, '../uploads'));
 
 // Ruta de prueba
 app.get('/', (req, res) => {

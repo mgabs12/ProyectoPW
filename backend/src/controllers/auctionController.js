@@ -4,18 +4,42 @@ const Bid = require('../models/Bid');
 // Crear subasta (solo vendedores)
 exports.createAuction = async (req, res) => {
   try {
-    const { title, brand, model, year, description, base_price, end_time } = req.body;
+    console.log('=== CREAR SUBASTA ===');
+    console.log('Body recibido:', req.body);
+    console.log('Usuario:', req.user);
+    console.log('Archivos:', req.files);
 
-    let image_url = null;
-    if (req.files && req.files.length > 0) {
-      image_url = `/uploads/vehicles/${req.files[0].filename}`;
+    // Destructurar con los nombres correctos que vienen del frontend
+    const { title, brand, model, year, description, basePrice, endDate } = req.body;
+
+    // Validaciones básicas
+    if (!title || !brand || !model || !year || !basePrice || !endDate) {
+      return res.status(400).json({
+        error: 'Faltan campos requeridos',
+        received: { title, brand, model, year, basePrice, endDate }
+      });
     }
 
-    // Validar que endDate sea una fecha válida
+    // Procesar imágenes subidas (si existen)
+    let image_url = null;
+    if (req.files && req.files.length > 0) {
+      // Guardar la primera imagen como principal
+      image_url = `/uploads/vehicles/${req.files[0].filename}`;
+      console.log(`Imágenes subidas: ${req.files.length}`);
+      console.log('Imagen principal:', image_url);
+      
+      // TODO: Si quieres guardar múltiples imágenes, crear tabla vehicle_images
+      // Por ahora solo usamos la primera
+    }
+
+    // Validar y convertir fecha
     const endTime = new Date(endDate);
+    console.log('Fecha parseada:', endTime);
+    
     if (isNaN(endTime.getTime())) {
       return res.status(400).json({
-        error: 'Fecha de finalización inválida.'
+        error: 'Fecha de finalización inválida.',
+        endDate: endDate
       });
     }
 
@@ -26,34 +50,66 @@ exports.createAuction = async (req, res) => {
       });
     }
 
-    // Procesar imágenes subidas
-    if (req.files && req.files.length > 0) {
-      // Tomar la primera imagen como principal
-      // En producción, puedes guardar todas en una tabla separada
-      image_url = `/uploads/vehicles/${req.files[0].filename}`;
+    // Validar año
+    const yearNum = parseInt(year);
+    if (yearNum < 1990 || yearNum > new Date().getFullYear() + 1) {
+      return res.status(400).json({
+        error: 'Año inválido'
+      });
     }
 
-    const auctionId = await Auction.create({
-      title,
-      brand,
-      model,
-      year: parseInt(year),
-      description,
-      base_price: parseFloat(basePrice),
-      end_time: endTime,
-      image_url: image_url || null,
-      vendedor_id: req.user.id
-    });
+    // Validar precio
+    const price = parseFloat(basePrice);
+    if (price < 100) {
+      return res.status(400).json({
+        error: 'El precio debe ser mayor a $100'
+      });
+    }
 
+    // Preparar datos para insertar (con los nombres que espera la BD)
+    const auctionData = {
+      title: title.trim(),
+      brand: brand.trim(),
+      model: model.trim(),
+      year: yearNum,
+      description: description ? description.trim() : '',
+      base_price: price,
+      end_time: endTime,
+      image_url: image_url,
+      vendedor_id: req.user.id
+    };
+
+    console.log('Datos a insertar en BD:', auctionData);
+
+    // Insertar en la base de datos
+    const auctionId = await Auction.create(auctionData);
+    console.log('✓ Subasta creada con ID:', auctionId);
+
+    // Obtener la subasta completa
     const auction = await Auction.findById(auctionId);
+    console.log('✓ Subasta obtenida:', auction);
 
     res.status(201).json({
       message: 'Subasta creada exitosamente',
-      auction
+      auction: {
+        id: auction.id,
+        title: auction.title,
+        brand: auction.brand,
+        model: auction.model,
+        year: auction.year,
+        description: auction.description,
+        basePrice: parseFloat(auction.base_price),
+        currentBid: parseFloat(auction.current_bid),
+        endTime: auction.end_time,
+        vendedor: `${auction.seller_name} ${auction.seller_lastname}`,
+        vendedor_id: auction.vendedor_id,
+        status: 'active',
+        imageUrl: auction.image_url
+      }
     });
     
   } catch (error) {
-    console.error('Error al crear subasta:', error);
+    console.error('✗ Error al crear subasta:', error);
     res.status(500).json({
       error: 'Error al crear subasta.',
       details: error.message
@@ -65,6 +121,8 @@ exports.createAuction = async (req, res) => {
 exports.getAllAuctions = async (req, res) => {
   try {
     const auctions = await Auction.findAllActive();
+    
+    console.log(`Subastas encontradas: ${auctions.length}`);
 
     // Formatear las subastas para el frontend
     const formattedAuctions = auctions.map(auction => ({
@@ -82,17 +140,19 @@ exports.getAllAuctions = async (req, res) => {
       vendedor_id: auction.vendedor_id,
       status: auction.status === 'activo' ? 'active' : auction.status,
       imageUrl: auction.image_url,
-      bidCount: auction.bid_count || 0
+      bidCount: auction.bid_count || 0,
+      color: 'bg-neutral-800' // Color por defecto para el tema
     }));
 
-   res.json({
-      count: auctions.length,
-      auctions
+    res.json({
+      count: formattedAuctions.length,
+      auctions: formattedAuctions // IMPORTANTE: Devolver el array formateado
     });
   } catch (error) {
     console.error('Error al obtener subastas:', error);
     res.status(500).json({
-      error: 'Error al obtener subastas.'
+      error: 'Error al obtener subastas.',
+      details: error.message
     });
   }
 };
@@ -129,6 +189,7 @@ exports.getAuctionById = async (req, res) => {
       status: auction.status === 'activo' ? 'active' : auction.status,
       imageUrl: auction.image_url,
       bidCount: auction.bid_count || 0,
+      color: 'bg-neutral-800',
       sellerInfo: {
         name: auction.seller_name,
         lastname: auction.seller_lastname,
@@ -173,7 +234,8 @@ exports.searchAuctions = async (req, res) => {
       endTime: auction.end_time,
       vendedor: `${auction.seller_name} ${auction.seller_lastname}`,
       status: auction.status === 'activo' ? 'active' : auction.status,
-      bidCount: auction.bid_count || 0
+      bidCount: auction.bid_count || 0,
+      color: 'bg-neutral-800'
     }));
 
     res.json({
@@ -190,6 +252,7 @@ exports.searchAuctions = async (req, res) => {
   }
 };
 
+
 // Obtener subastas del vendedor autenticado
 exports.getMyAuctions = async (req, res) => {
   try {
@@ -205,7 +268,8 @@ exports.getMyAuctions = async (req, res) => {
       currentBid: parseFloat(auction.current_bid),
       endTime: auction.end_time,
       status: auction.status === 'activo' ? 'active' : auction.status,
-      bidCount: auction.bid_count || 0
+      bidCount: auction.bid_count || 0,
+      color: 'bg-neutral-800'
     }));
 
     res.json({
@@ -220,6 +284,7 @@ exports.getMyAuctions = async (req, res) => {
     });
   }
 };
+
 
 // Cancelar subasta (solo el vendedor)
 exports.cancelAuction = async (req, res) => {
