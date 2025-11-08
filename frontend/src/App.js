@@ -1,7 +1,7 @@
-
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { Clock, User, Car, Gavel, Heart, Plus, Search, Bell, LogOut, Menu, X } from 'lucide-react';
+
 
 // Configurar axios
 const api = axios.create({
@@ -480,9 +480,10 @@ function RegisterPage({ handleRegister, registerForm, setRegisterForm, setCurren
   );
 }
 
-function Dashboard({ user, auctions, setCurrentView }) {
+function Dashboard({ user, auctions, setCurrentView, setSelectedAuction }) {
+  // Filtrar subastas según el rol del usuario
   const userAuctions = user?.role === 'vendedor' 
-    ? auctions.filter(a => a.vendedor === user.name)
+    ? auctions.filter(a => a.vendedor_id === user.id)
     : auctions.filter(a => a.status === 'active');
 
   return (
@@ -504,7 +505,7 @@ function Dashboard({ user, auctions, setCurrentView }) {
           </div>
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center border-l-4 border-green-500">
             <div className="text-4xl font-bold text-green-600 mb-2">
-              {user?.role === 'vendedor' ? '2' : '3'}
+              {user?.role === 'vendedor' ? '0' : '0'}
             </div>
             <p className="text-gray-600 font-medium">
               {user?.role === 'vendedor' ? 'Ventas Completadas' : 'Subastas Ganadas'}
@@ -512,7 +513,7 @@ function Dashboard({ user, auctions, setCurrentView }) {
           </div>
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center border-l-4 border-purple-500">
             <div className="text-4xl font-bold text-purple-600 mb-2">
-              {user?.role === 'vendedor' ? '$45,000' : '5'}
+              {user?.role === 'vendedor' ? '$0' : '0'}
             </div>
             <p className="text-gray-600 font-medium">
               {user?.role === 'vendedor' ? 'Total Vendido' : 'Pujas Activas'}
@@ -548,10 +549,10 @@ function Dashboard({ user, auctions, setCurrentView }) {
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                 <p className="text-sm text-gray-700 font-medium mb-1">
                   {user?.role === 'vendedor' 
-                    ? 'Nueva puja en tu vehículo' 
-                    : 'Nueva subasta disponible'}
+                    ? userAuctions.length > 0 ? 'Tienes subastas activas' : 'Crea tu primera subasta' 
+                    : 'Nuevas subastas disponibles'}
                 </p>
-                <p className="text-xs text-gray-500">Hace 5 minutos</p>
+                <p className="text-xs text-gray-500">Actualizado ahora</p>
               </div>
             </div>
           </div>
@@ -564,15 +565,26 @@ function Dashboard({ user, auctions, setCurrentView }) {
               {userAuctions.length > 0 ? (
                 <div className="grid md:grid-cols-2 gap-6">
                   {userAuctions.slice(0, 4).map((auction) => (
-                    <div key={auction.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                         onClick={() => setCurrentView('auctions')}>
-                      <div className={`h-32 ${auction.color} rounded-lg mb-4 flex items-center justify-center`}>
+                    <div 
+                      key={auction.id} 
+                      className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setSelectedAuction(auction);
+                        setCurrentView('auction-detail');
+                      }}
+                    >
+                      <div className={`h-32 ${auction.color || 'bg-blue-400'} rounded-lg mb-4 flex items-center justify-center`}>
                         <Car className="h-12 w-12 text-white" />
                       </div>
                       <h4 className="font-bold text-lg mb-2 text-gray-800">{auction.title}</h4>
-                      <p className="text-sm text-gray-600 mb-2">Estado: {auction.status}</p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {auction.brand} {auction.model} {auction.year}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Estado: <span className="font-semibold text-green-600">{auction.status}</span>
+                      </p>
                       <p className="text-blue-600 font-bold text-xl">
-                        Puja actual: ${auction.currentBid.toLocaleString()}
+                        Puja actual: ${(auction.currentBid || auction.basePrice)?.toLocaleString()}
                       </p>
                     </div>
                   ))}
@@ -585,6 +597,14 @@ function Dashboard({ user, auctions, setCurrentView }) {
                       ? 'No has creado subastas aún' 
                       : 'No hay subastas disponibles'}
                   </p>
+                  {user?.role === 'vendedor' && (
+                    <button 
+                      onClick={() => setCurrentView('create-auction')}
+                      className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                    >
+                      Crear Mi Primera Subasta
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -604,6 +624,23 @@ function AuctionDetail({
   bidAmount,
   setBidAmount
 }) {
+  if (!selectedAuction) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Car className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+          <p className="text-xl text-gray-500">Subasta no encontrada</p>
+          <button 
+            onClick={() => setCurrentView('auctions')}
+            className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700"
+          >
+            Ver todas las subastas
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -617,9 +654,9 @@ function AuctionDetail({
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h1 className="text-3xl font-bold mb-6 text-gray-800">{selectedAuction?.title}</h1>
+              <h1 className="text-3xl font-bold mb-6 text-gray-800">{selectedAuction.title}</h1>
               
-              <div className={`h-80 ${selectedAuction?.color} rounded-2xl mb-6 flex items-center justify-center`}>
+              <div className={`h-80 ${selectedAuction.color} rounded-2xl mb-6 flex items-center justify-center`}>
                 <Car className="h-32 w-32 text-white" />
               </div>
               
@@ -631,46 +668,38 @@ function AuctionDetail({
                 ))}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="mb-8">
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h3 className="text-xl font-bold mb-4 text-gray-800">Especificaciones</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
                       <span className="font-medium text-gray-600">Marca:</span>
-                      <span className="font-bold">{selectedAuction?.brand}</span>
+                      <span className="font-bold text-gray-800">{selectedAuction.brand}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
                       <span className="font-medium text-gray-600">Modelo:</span>
-                      <span className="font-bold">{selectedAuction?.model}</span>
+                      <span className="font-bold text-gray-800">{selectedAuction.model}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
                       <span className="font-medium text-gray-600">Año:</span>
-                      <span className="font-bold">{selectedAuction?.year}</span>
+                      <span className="font-bold text-gray-800">{selectedAuction.year}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Kilometraje:</span>
-                      <span className="font-bold">45,000 km</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Transmisión:</span>
-                      <span className="font-bold">Automática</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-600">Combustible:</span>
-                      <span className="font-bold">Gasolina</span>
+                    <div className="flex justify-between border-b border-gray-200 pb-3">
+                      <span className="font-medium text-gray-600">Precio Base:</span>
+                      <span className="font-bold text-gray-800">${selectedAuction.basePrice?.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
-                
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">Estado del Vehículo</h3>
-                  <p className="text-gray-700 leading-relaxed">
-                    Vehículo en excelente estado, único dueño. Mantenimientos al día, 
-                    sin accidentes. Interior impecable, sistema de entretenimiento 
-                    actualizado. Llantas nuevas, batería recién cambiada.
+              </div>
+
+              {selectedAuction.description && (
+                <div className="bg-gray-50 rounded-xl p-6 mb-8">
+                  <h3 className="text-xl font-bold mb-4 text-gray-800">Descripción</h3>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedAuction.description}
                   </p>
                 </div>
-              </div>
+              )}
 
               <div className="bg-blue-50 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-4 text-gray-800">Información del Vendedor</h3>
@@ -679,7 +708,7 @@ function AuctionDetail({
                     <User className="h-8 w-8 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-lg text-gray-800">{selectedAuction?.vendedor}</p>
+                    <p className="font-bold text-lg text-gray-800">{selectedAuction.vendedor}</p>
                     <p className="text-gray-600">Vendedor verificado • 4.8/5 ⭐</p>
                   </div>
                 </div>
@@ -690,14 +719,14 @@ function AuctionDetail({
           <div className="bg-white rounded-2xl shadow-lg p-6 h-fit sticky top-4">
             <div className="text-center mb-6">
               <div className="text-4xl font-bold text-blue-600 mb-2">
-                ${selectedAuction?.currentBid.toLocaleString()}
+                ${selectedAuction.currentBid?.toLocaleString()}
               </div>
               <p className="text-gray-600 font-medium">Puja actual</p>
             </div>
             
             <div className="bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-200 p-4 rounded-xl mb-6 text-center">
               <p className="font-bold text-orange-700 text-lg">
-                Termina en: {formatTimeRemaining(selectedAuction?.endTime)}
+                Termina en: {formatTimeRemaining(selectedAuction.endTime)}
               </p>
             </div>
 
@@ -706,15 +735,15 @@ function AuctionDetail({
                 <form onSubmit={handleBid}>
                   <div className="mb-6">
                     <label className="block text-gray-700 font-bold mb-2">
-                      Tu puja (mínimo ${(selectedAuction?.currentBid + 50)?.toLocaleString()}):
+                      Tu puja (mínimo ${((selectedAuction.currentBid || selectedAuction.basePrice) + 50)?.toLocaleString()}):
                     </label>
                     <input
                       type="number"
                       value={bidAmount}
                       onChange={(e) => setBidAmount(e.target.value)}
-                      min={selectedAuction?.currentBid + 50}
+                      min={(selectedAuction.currentBid || selectedAuction.basePrice) + 50}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-lg"
-                      placeholder={(selectedAuction?.currentBid + 100)?.toString()}
+                      placeholder={((selectedAuction.currentBid || selectedAuction.basePrice) + 100)?.toString()}
                     />
                   </div>
                   <button
@@ -750,24 +779,21 @@ function AuctionDetail({
               <h4 className="font-bold mb-4 text-gray-800">Historial de Pujas</h4>
               <div className="max-h-64 overflow-y-auto">
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-bold text-gray-800">${selectedAuction?.currentBid.toLocaleString()}</p>
-                      <p className="text-sm text-gray-500">Carlos M. • Hace 5 min</p>
+                  {selectedAuction.currentBid > selectedAuction.basePrice ? (
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-bold text-gray-800">${selectedAuction.currentBid?.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Puja más alta • Reciente</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-bold text-gray-800">${(selectedAuction?.currentBid - 250).toLocaleString()}</p>
-                      <p className="text-sm text-gray-500">Ana L. • Hace 12 min</p>
+                  ) : (
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-bold text-gray-800">${selectedAuction.basePrice?.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Precio base</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-bold text-gray-800">${selectedAuction?.basePrice.toLocaleString()}</p>
-                      <p className="text-sm text-gray-500">Precio base • Hace 2 días</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1217,32 +1243,53 @@ const CarBid = () => {
     setCurrentView('home');
   };
 
-  const handleBid = async (e) => {
-    e.preventDefault();
-    if (!bidAmount || parseFloat(bidAmount) <= selectedAuction.currentBid) {
-      alert('La puja debe ser mayor a la oferta actual');
-      return;
-    }
+  // En el componente principal CarBid, reemplaza la función handleBid con esta:
 
-    try {
-      const { data } = await api.post(`/auctions/${selectedAuction.id}/bid`, {
-        amount: parseFloat(bidAmount)
-      });
+const handleBid = async (e) => {
+  e.preventDefault();
+  
+  if (!bidAmount || parseFloat(bidAmount) <= (selectedAuction.currentBid || selectedAuction.basePrice)) {
+    alert('La puja debe ser mayor a la oferta actual');
+    return;
+  }
 
-      const updatedAuctions = auctions.map(auction =>
-        auction.id === selectedAuction.id
-          ? { ...auction, currentBid: parseFloat(bidAmount) }
-          : auction
-      );
-      setAuctions(updatedAuctions);
-      setSelectedAuction({ ...selectedAuction, currentBid: parseFloat(bidAmount) });
-      setBidAmount('');
-      alert('¡Puja realizada exitosamente!');
-    } catch (error) {
-      const msg = error?.response?.data?.error || 'Error al realizar la puja';
-      alert(msg);
-    }
-  };
+  try {
+    console.log('Enviando puja:', {
+      auction_id: selectedAuction.id,
+      amount: parseFloat(bidAmount)
+    });
+
+    const { data } = await api.post('/bids', {
+      auction_id: selectedAuction.id,
+      amount: parseFloat(bidAmount)
+    });
+
+    console.log('Puja exitosa:', data);
+
+    // Actualizar las subastas localmente
+    const updatedAuctions = auctions.map(auction =>
+      auction.id === selectedAuction.id
+        ? { ...auction, currentBid: parseFloat(bidAmount) }
+        : auction
+    );
+    setAuctions(updatedAuctions);
+    
+    // Actualizar la subasta seleccionada
+    setSelectedAuction({ 
+      ...selectedAuction, 
+      currentBid: parseFloat(bidAmount) 
+    });
+    
+    setBidAmount('');
+    alert('¡Puja realizada exitosamente!');
+  } catch (error) {
+    console.error('Error al realizar puja:', error);
+    console.error('Response:', error?.response?.data);
+    
+    const msg = error?.response?.data?.error || 'Error al realizar la puja';
+    alert(msg);
+  }
+};
 
   const renderCurrentView = () => {
     switch (currentView) {

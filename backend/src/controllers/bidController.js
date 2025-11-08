@@ -1,3 +1,6 @@
+const Auction = require('../models/Auction');
+const Bid = require('../models/Bid');
+
 // Crear puja
 exports.createBid = async (req, res) => {
   try {
@@ -55,16 +58,18 @@ exports.createBid = async (req, res) => {
 
     // Emitir evento de socket para actualización en tiempo real
     const io = req.app.get('io');
-    io.to(`auction-${auction_id}`).emit('new-bid', {
-      bidId,
-      auction_id,
-      amount,
-      bidder: {
-        name: req.user.name || 'Usuario',
-        id: userId
-      },
-      timestamp: new Date()
-    });
+    if (io) {
+      io.to(`auction-${auction_id}`).emit('new-bid', {
+        bidId,
+        auction_id,
+        amount,
+        bidder: {
+          name: req.user.name || 'Usuario',
+          id: userId
+        },
+        timestamp: new Date()
+      });
+    }
 
     res.status(201).json({
       message: 'Puja realizada exitosamente',
@@ -78,7 +83,8 @@ exports.createBid = async (req, res) => {
   } catch (error) {
     console.error('Error al crear puja:', error);
     res.status(500).json({
-      error: 'Error al realizar puja.'
+      error: 'Error al realizar puja.',
+      details: error.message
     });
   }
 };
@@ -97,7 +103,8 @@ exports.getAuctionBids = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener pujas:', error);
     res.status(500).json({
-      error: 'Error al obtener pujas.'
+      error: 'Error al obtener pujas.',
+      details: error.message
     });
   }
 };
@@ -114,7 +121,8 @@ exports.getMyBids = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener mis pujas:', error);
     res.status(500).json({
-      error: 'Error al obtener tus pujas.'
+      error: 'Error al obtener tus pujas.',
+      details: error.message
     });
   }
 };
@@ -133,7 +141,8 @@ exports.getBidStats = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
     res.status(500).json({
-      error: 'Error al obtener estadísticas.'
+      error: 'Error al obtener estadísticas.',
+      details: error.message
     });
   }
 };

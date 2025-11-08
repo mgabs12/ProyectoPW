@@ -1,3 +1,5 @@
+const User = require('../models/User');
+
 // Actualizar perfil de usuario
 exports.updateProfile = async (req, res) => {
   try {
@@ -28,7 +30,8 @@ exports.updateProfile = async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar perfil:', error);
     res.status(500).json({
-      error: 'Error al actualizar perfil.'
+      error: 'Error al actualizar perfil.',
+      details: error.message
     });
   }
 };
@@ -45,8 +48,8 @@ exports.getHistory = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener historial:', error);
     res.status(500).json({
-      error: 'Error al obtener historial.'
+      error: 'Error al obtener historial.',
+      details: error.message
     });
   }
 };
-

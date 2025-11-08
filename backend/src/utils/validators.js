@@ -24,12 +24,12 @@ const validateRegister = [
   
   body('role')
     .notEmpty().withMessage('El rol es requerido')
-    .isIn(['comprador', 'vendedor']).withMessage('El rol debe ser Comprador o Vendedor'),
+    .isIn(['comprador', 'vendedor']).withMessage('El rol debe ser comprador o vendedor'),
   
   body('phone')
     .optional({ nullable: true })
     .trim()
-    .isLength({ min: 8, max: 20 }).withMessage('El teléfono debe tener entre 8')
+    .isLength({ min: 8, max: 20 }).withMessage('El teléfono debe tener entre 8 y 20 caracteres')
 ];
 
 // Validaciones para login
@@ -44,12 +44,12 @@ const validateLogin = [
     .notEmpty().withMessage('La contraseña es requerida')
 ];
 
-// Validaciones para crear subasta
+// Validaciones para crear subasta (USANDO CAMELCASE como envía el frontend)
 const validateCreateAuction = [
   body('title')
     .trim()
     .notEmpty().withMessage('El título es requerido')
-    .isLength({ min: 5, max: 255 }).withMessage('El título debe tener más de 5'),
+    .isLength({ min: 5, max: 255 }).withMessage('El título debe tener entre 5 y 255 caracteres'),
   
   body('brand')
     .trim()
@@ -63,19 +63,19 @@ const validateCreateAuction = [
   
   body('year')
     .notEmpty().withMessage('El año es requerido')
-    .isInt({ min: 1900, max: new Date().getFullYear() + 1 })
-    .withMessage('El año debe estar entre 1900 y el año actual'),
+    .isInt({ min: 1990, max: new Date().getFullYear() + 1 })
+    .withMessage(`El año debe estar entre 1990 y ${new Date().getFullYear() + 1}`),
   
   body('description')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 2000 }).withMessage('La descripción debe tener máximo 2000 caracteres'),
   
-  body('base_price')
+  body('basePrice')
     .notEmpty().withMessage('El precio base es requerido')
-    .isFloat({ min: 0 }).withMessage('El precio base debe ser un número positivo'),
+    .isFloat({ min: 100 }).withMessage('El precio base debe ser al menos $100'),
   
-  body('end_time')
+  body('endDate')
     .notEmpty().withMessage('La fecha de cierre es requerida')
     .isISO8601().withMessage('La fecha debe estar en formato válido')
     .custom((value) => {
@@ -88,7 +88,7 @@ const validateCreateAuction = [
     }),
   
   body('image_url')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .isURL().withMessage('La URL de imagen debe ser válida')
 ];
@@ -107,7 +107,11 @@ const validateCreateBid = [
 // Validación de ID en parámetros
 const validateId = [
   param('id')
-    .isInt({ min: 1 }).withMessage('El ID debe ser un número positivo')
+    .isInt({ min: 1 }).withMessage('El ID debe ser un número positivo'),
+  
+  param('auctionId')
+    .optional()
+    .isInt({ min: 1 }).withMessage('El ID de subasta debe ser un número positivo')
 ];
 
 // Validaciones para búsqueda de subastas
@@ -127,7 +131,7 @@ const validateSearchAuctions = [
   
   query('year')
     .optional()
-    .isInt({ min: 1900, max: new Date().getFullYear() + 1 })
+    .isInt({ min: 1990, max: new Date().getFullYear() + 1 })
 ];
 
 module.exports = {

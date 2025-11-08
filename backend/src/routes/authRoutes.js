@@ -14,4 +14,7 @@ router.post('/login', validateLogin, validate, authController.login);
 // GET /api/auth/profile - Obtener perfil (requiere autenticación)
 router.get('/profile', authenticate, authController.getProfile);
 
+// GET /api/auth/me - Alias para obtener perfil (para compatibilidad con frontend)
+router.get('/me', authenticate, authController.getProfile);
+
 module.exports = router;

@@ -1,9 +1,11 @@
 -- Crear base de datos
-CREATE DATABASE IF NOT EXISTS carbiddb
+DROP DATABASE IF EXISTS carbiddb;
+
+CREATE DATABASE carbiddb
   CHARACTER SET utf8mb4 
   COLLATE utf8mb4_unicode_ci;
 
-USE carbidDB;
+USE carbiddb;
 
 -- Eliminar tablas si existen (para desarrollo)
 DROP TABLE IF EXISTS user_history;

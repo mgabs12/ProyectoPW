@@ -1,20 +1,34 @@
 const Auction = require('../models/Auction');
 const Bid = require('../models/Bid');
 
-
 // Crear subasta (solo vendedores)
 exports.createAuction = async (req, res) => {
   try {
-    const { title, brand, model, year, description, base_price, end_time, image_url } = req.body;
+    const { title, brand, model, year, description, basePrice, endDate, image_url } = req.body;
+
+    // Validar que endDate sea una fecha válida
+    const endTime = new Date(endDate);
+    if (isNaN(endTime.getTime())) {
+      return res.status(400).json({
+        error: 'Fecha de finalización inválida.'
+      });
+    }
+
+    // Validar que la fecha sea futura
+    if (endTime <= new Date()) {
+      return res.status(400).json({
+        error: 'La fecha de finalización debe ser futura.'
+      });
+    }
 
     const auctionId = await Auction.create({
       title,
       brand,
       model,
-      year,
+      year: parseInt(year),
       description,
-      base_price,
-      end_time,
+      base_price: parseFloat(basePrice),
+      end_time: endTime,
       image_url: image_url || null,
       vendedor_id: req.user.id
     });
@@ -28,7 +42,8 @@ exports.createAuction = async (req, res) => {
   } catch (error) {
     console.error('Error al crear subasta:', error);
     res.status(500).json({
-      error: 'Error al crear subasta.'
+      error: 'Error al crear subasta.',
+      details: error.message
     });
   }
 };
@@ -38,14 +53,34 @@ exports.getAllAuctions = async (req, res) => {
   try {
     const auctions = await Auction.findAllActive();
 
+    // Formatear las subastas para el frontend
+    const formattedAuctions = auctions.map(auction => ({
+      id: auction.id,
+      title: auction.title,
+      brand: auction.brand,
+      model: auction.model,
+      year: auction.year,
+      description: auction.description,
+      basePrice: parseFloat(auction.base_price),
+      currentBid: parseFloat(auction.current_bid),
+      endTime: auction.end_time,
+      endDate: auction.end_time, // Para compatibilidad con frontend
+      vendedor: `${auction.seller_name} ${auction.seller_lastname}`,
+      vendedor_id: auction.vendedor_id,
+      status: auction.status === 'activo' ? 'active' : auction.status,
+      imageUrl: auction.image_url,
+      bidCount: auction.bid_count || 0
+    }));
+
     res.json({
-      count: auctions.length,
-      auctions
+      count: formattedAuctions.length,
+      auctions: formattedAuctions
     });
   } catch (error) {
     console.error('Error al obtener subastas:', error);
     res.status(500).json({
-      error: 'Error al obtener subastas.'
+      error: 'Error al obtener subastas.',
+      details: error.message
     });
   }
 };
@@ -65,14 +100,40 @@ exports.getAuctionById = async (req, res) => {
     // Obtener historial de pujas
     const bids = await Bid.findByAuction(id);
 
+    // Formatear para el frontend
+    const formattedAuction = {
+      id: auction.id,
+      title: auction.title,
+      brand: auction.brand,
+      model: auction.model,
+      year: auction.year,
+      description: auction.description,
+      basePrice: parseFloat(auction.base_price),
+      currentBid: parseFloat(auction.current_bid),
+      endTime: auction.end_time,
+      endDate: auction.end_time,
+      vendedor: `${auction.seller_name} ${auction.seller_lastname}`,
+      vendedor_id: auction.vendedor_id,
+      status: auction.status === 'activo' ? 'active' : auction.status,
+      imageUrl: auction.image_url,
+      bidCount: auction.bid_count || 0,
+      sellerInfo: {
+        name: auction.seller_name,
+        lastname: auction.seller_lastname,
+        email: auction.seller_email,
+        phone: auction.seller_phone
+      }
+    };
+
     res.json({
-      auction,
+      auction: formattedAuction,
       bids
     });
   } catch (error) {
     console.error('Error al obtener subasta:', error);
     res.status(500).json({
-      error: 'Error al obtener subasta.'
+      error: 'Error al obtener subasta.',
+      details: error.message
     });
   }
 };
@@ -89,15 +150,30 @@ exports.searchAuctions = async (req, res) => {
 
     const auctions = await Auction.search(filters);
 
+    const formattedAuctions = auctions.map(auction => ({
+      id: auction.id,
+      title: auction.title,
+      brand: auction.brand,
+      model: auction.model,
+      year: auction.year,
+      basePrice: parseFloat(auction.base_price),
+      currentBid: parseFloat(auction.current_bid),
+      endTime: auction.end_time,
+      vendedor: `${auction.seller_name} ${auction.seller_lastname}`,
+      status: auction.status === 'activo' ? 'active' : auction.status,
+      bidCount: auction.bid_count || 0
+    }));
+
     res.json({
-      count: auctions.length,
+      count: formattedAuctions.length,
       filters,
-      auctions
+      auctions: formattedAuctions
     });
   } catch (error) {
     console.error('Error en búsqueda:', error);
     res.status(500).json({
-      error: 'Error al buscar subastas.'
+      error: 'Error al buscar subastas.',
+      details: error.message
     });
   }
 };
@@ -107,14 +183,28 @@ exports.getMyAuctions = async (req, res) => {
   try {
     const auctions = await Auction.findBySeller(req.user.id);
 
+    const formattedAuctions = auctions.map(auction => ({
+      id: auction.id,
+      title: auction.title,
+      brand: auction.brand,
+      model: auction.model,
+      year: auction.year,
+      basePrice: parseFloat(auction.base_price),
+      currentBid: parseFloat(auction.current_bid),
+      endTime: auction.end_time,
+      status: auction.status === 'activo' ? 'active' : auction.status,
+      bidCount: auction.bid_count || 0
+    }));
+
     res.json({
-      count: auctions.length,
-      auctions
+      count: formattedAuctions.length,
+      auctions: formattedAuctions
     });
   } catch (error) {
     console.error('Error al obtener mis subastas:', error);
     res.status(500).json({
-      error: 'Error al obtener tus subastas.'
+      error: 'Error al obtener tus subastas.',
+      details: error.message
     });
   }
 };
@@ -153,7 +243,8 @@ exports.cancelAuction = async (req, res) => {
   } catch (error) {
     console.error('Error al cancelar subasta:', error);
     res.status(500).json({
-      error: 'Error al cancelar subasta.'
+      error: 'Error al cancelar subasta.',
+      details: error.message
     });
   }
 };
@@ -194,7 +285,8 @@ exports.closeAuction = async (req, res) => {
   } catch (error) {
     console.error('Error al cerrar subasta:', error);
     res.status(500).json({
-      error: 'Error al cerrar subasta.'
+      error: 'Error al cerrar subasta.',
+      details: error.message
     });
   }
 };

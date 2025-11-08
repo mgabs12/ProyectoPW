@@ -34,18 +34,21 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Agregar usuario al request
+    // Agregar usuario completo al request (incluyendo nombre)
     req.user = {
       id: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      name: user.name,
+      lastname: user.lastname
     };
 
     next();
   } catch (error) {
     console.error('Error en autenticación:', error);
     res.status(500).json({
-      error: 'Error al verificar autenticación.'
+      error: 'Error al verificar autenticación.',
+      details: error.message
     });
   }
 };
@@ -85,7 +88,9 @@ const optionalAuth = async (req, res, next) => {
           req.user = {
             id: user.id,
             email: user.email,
-            role: user.role
+            role: user.role,
+            name: user.name,
+            lastname: user.lastname
           };
         }
       }

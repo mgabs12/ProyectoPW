@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auctionController = require('../controllers/auctionController');
-const { authenticate, isSeller, optionalAuth, esVendedor } = require('../middleware/auth');
+const { authenticate, esVendedor, optionalAuth, esComprador } = require('../middleware/auth');
 const { validate } = require('../middleware/validation');
 const { validateCreateAuction, validateId, validateSearchAuctions } = require('../utils/validators');
 
@@ -27,5 +27,18 @@ router.put('/:id/cancel', authenticate, esVendedor, validateId, validate, auctio
 
 // PUT /api/auctions/:id/close - Cerrar subasta (para admin o proceso automático)
 router.put('/:id/close', authenticate, validateId, validate, auctionController.closeAuction);
+
+const getAllAuctions = async (req, res) => {
+        try {
+          const auctions = await Auction.findAll({
+            where: { status: 'active', end_time: { [Op.gt]: new Date() } },
+            include: [{ model: User, as: 'vendedor', attributes: ['username'] }]
+          });
+          res.json(auctions);
+        } catch (error) {
+          console.error('Error in getAllAuctions:', error);
+          res.status(500).json({ error: 'Failed to fetch auctions' });
+        }
+      };
 
 module.exports = router;
